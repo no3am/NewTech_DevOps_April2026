@@ -2,3 +2,4 @@ this is the first file
 code line 1
 code line 2
 code line with bug in it
+code line 4
