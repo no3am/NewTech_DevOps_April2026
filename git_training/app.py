@@ -1,2 +1,3 @@
 print("Service is starting...")
-print("System Check: OK")
+print(f"Running Version: {CONFIG['version']}")
+print("System check: OK")
