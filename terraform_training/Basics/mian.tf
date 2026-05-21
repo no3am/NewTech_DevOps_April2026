@@ -25,6 +25,7 @@ resource "aws_security_group_rule" "http_in" {
   security_group_id = aws_security_group.allow_ssh.id
 }
 
+
 resource "aws_key_pair" "my_key" {
   key_name   = "terraform-training-key"
   public_key = file("~/.ssh/id_ed25519.pub")
@@ -55,11 +56,25 @@ resource "aws_key_pair" "my_key" {
 resource "aws_instance" "web" {
   ami           = "ami-036bdae36143a955f"
   instance_type = "t3.micro"
+  region        = "eu-central-1"
   #key_name      = aws_key_pair.my_key.key_name
 
   security_groups = [aws_security_group.allow_ssh.name]
 
   tags = {
     Name = "terraform-training"
+  }
+}
+
+resource "aws_instance" "web_2" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  region        = var.region
+  #key_name      = aws_key_pair.my_key.key_name
+
+  security_groups = [aws_security_group.allow_ssh.name]
+
+  tags = {
+    Name = "terraform-training-2"
   }
 }
