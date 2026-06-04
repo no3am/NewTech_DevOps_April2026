@@ -16,3 +16,20 @@ jobs:
         git clone https://x-access-token:${{ github.token }}@${{ github.server_url != 'https://github.com' && github.server_url || 'github.com' }}/${{ github.repository }}.git repo
         cd repo
         git checkout ${{ github.sha }}
+
+    - name: Verify python
+      run: |
+        python --version
+        which python
+
+    - name: Install dependencies
+      run: |
+        cd repo/GH_Actions/lab1
+        python3 -m pip install --upgrade pip
+        pip3 install pytest pytest-cov
+        if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
+
+    - name: Run tests
+      run: |
+        cd repo/GH_Actions/lab1
+        python3 -m unittest test_calculator.py -v
