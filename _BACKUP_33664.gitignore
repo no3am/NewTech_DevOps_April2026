@@ -1,0 +1,8 @@
+.DS_Store
+.terraform*
+<<<<<<< HEAD
+terraform.tfstate*terraform-provider-*
+**/*.tfstate*
+=======
+terraform.tfstate*
+>>>>>>> 7e1dedc (remote backend example)
