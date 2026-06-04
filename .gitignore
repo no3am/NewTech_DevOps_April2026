@@ -1,5 +1,10 @@
 .DS_Store
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Terraform
 .terraform/
 *.tfstate
