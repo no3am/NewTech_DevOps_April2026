@@ -103,7 +103,7 @@ Your workflow must:
 2. **Define three jobs** (`test-validator`, `test-transformer`, `test-reporter`)
 3. **Run jobs in parallel** — without any `needs:` dependency between them
 4. Each job must:
-   - Check out the code (`actions/checkout@v4`)
+   - Check out the code (`actions/checkout@v5`)
    - Set up Python 3.11
    - Install dependencies from `requirements.txt`
    - Run the correct test file with `pytest`

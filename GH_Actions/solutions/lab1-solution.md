@@ -25,10 +25,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Python 3.11
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
@@ -102,10 +102,10 @@ Each job has a list of steps that run **in order**, top to bottom.
 
 ```yaml
 - name: Checkout code
-  uses: actions/checkout@v4
+  uses: actions/checkout@v5
 ```
 
-`uses` means "run a pre-built action from the GitHub Actions marketplace". `actions/checkout@v4` clones your repository into the virtual machine so the next steps can access your files.
+`uses` means "run a pre-built action from the GitHub Actions marketplace". `actions/checkout@v5` clones your repository into the virtual machine so the next steps can access your files.
 
 Without this step, the runner has no code to work with.
 
@@ -115,7 +115,7 @@ Without this step, the runner has no code to work with.
 
 ```yaml
 - name: Set up Python 3.11
-  uses: actions/setup-python@v4
+  uses: actions/setup-python@v6
   with:
     python-version: '3.11'
 ```
@@ -208,10 +208,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 

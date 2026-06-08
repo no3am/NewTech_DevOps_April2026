@@ -61,11 +61,11 @@ jobs:
     steps:
       # STEP 1: Download the repository code onto the runner
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # STEP 2: Install the requested Python version
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -112,10 +112,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -159,10 +159,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -199,10 +199,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -272,8 +272,8 @@ jobs:
 #   test-validator:
 #     runs-on: ubuntu-latest
 #     steps:
-#       - uses: actions/checkout@v4
-#       - uses: actions/setup-python@v5
+#       - uses: actions/checkout@v5
+#       - uses: actions/setup-python@v6
 #         with: { python-version: '3.11' }
 #       - run: pip install -r requirements.txt
 #         working-directory: './GH_Actions/lab3'
@@ -283,8 +283,8 @@ jobs:
 #   test-transformer:
 #     runs-on: ubuntu-latest
 #     steps:
-#       - uses: actions/checkout@v4
-#       - uses: actions/setup-python@v5
+#       - uses: actions/checkout@v5
+#       - uses: actions/setup-python@v6
 #         with: { python-version: '3.11' }
 #       - run: pip install -r requirements.txt
 #         working-directory: './GH_Actions/lab3'
@@ -294,8 +294,8 @@ jobs:
 #   test-reporter:
 #     runs-on: ubuntu-latest
 #     steps:
-#       - uses: actions/checkout@v4
-#       - uses: actions/setup-python@v5
+#       - uses: actions/checkout@v5
+#       - uses: actions/setup-python@v6
 #         with: { python-version: '3.11' }
 #       - run: pip install -r requirements.txt
 #         working-directory: './GH_Actions/lab3'
