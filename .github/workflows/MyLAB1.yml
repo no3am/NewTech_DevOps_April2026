@@ -41,7 +41,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: automated format fixes via Black"
-          branch: ${{ github.head_ref || github.ref_name }}
+          branch: main
 
       - name: lint with flake8
         run: |
