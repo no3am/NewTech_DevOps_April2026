@@ -1,10 +1,11 @@
 name: Lab 3 - Parallel Jobs (Data Pipeline)
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
+  workflow_dispatch: # enable manual trigger for testing
 
 # ─────────────────────────────────────────────────────────────────────────────
 # EXECUTION ORDER
@@ -24,7 +25,6 @@ on:
 # ─────────────────────────────────────────────────────────────────────────────
 
 jobs:
-
   # ── JOB 1 ──────────────────────────────────────────────────────────────────
   # No 'needs:' → starts immediately when the workflow is triggered
   # Matrix runs 3 Python versions in parallel
@@ -34,7 +34,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.11', '3.10', '3.9']
+        python-version: ["3.11", "3.10", "3.9"]
 
     steps:
       - name: Checkout code
@@ -49,11 +49,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-        working-directory: './GH_Actions/lab3'
+        working-directory: "./GH_Actions/lab3"
 
       - name: Run validator tests
         run: pytest test_validator.py -v --cov=validator --cov-report=term-missing
-        working-directory: './GH_Actions/lab3'
+        working-directory: "./GH_Actions/lab3"
 
   # ── JOB 2 ──────────────────────────────────────────────────────────────────
   # No 'needs:' → also starts immediately, runs alongside test-validator
@@ -64,7 +64,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.11', '3.10', '3.9']
+        python-version: ["3.11", "3.10", "3.9"]
 
     steps:
       - name: Checkout code
@@ -79,11 +79,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-        working-directory: './GH_Actions/lab3'
+        working-directory: "./GH_Actions/lab3"
 
       - name: Run transformer tests
         run: pytest test_transformer.py -v --cov=transformer --cov-report=term-missing
-        working-directory: './GH_Actions/lab3'
+        working-directory: "./GH_Actions/lab3"
 
   # ── JOB 3 ──────────────────────────────────────────────────────────────────
   # No 'needs:' → also starts immediately, runs alongside the other two
@@ -94,7 +94,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.11', '3.10', '3.9']
+        python-version: ["3.11", "3.10", "3.9"]
 
     steps:
       - name: Checkout code
@@ -109,11 +109,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-        working-directory: './GH_Actions/lab3'
+        working-directory: "./GH_Actions/lab3"
 
       - name: Run reporter tests
         run: pytest test_reporter.py -v --cov=reporter --cov-report=term-missing
-        working-directory: './GH_Actions/lab3'
+        working-directory: "./GH_Actions/lab3"
 
   # ── JOB 4 — FAN-IN ─────────────────────────────────────────────────────────
   # 'needs' lists all three parallel jobs → this job waits for all of them
