@@ -124,7 +124,7 @@ jobs:
           #Save the XML Report
 
   Test-Reporter:
-    needs: Test-Validator
+    needs: Test-Transformer
     strategy: #to use the same workflow to test in multiple Python versions and the usage of variables.
       fail-fast: false
       matrix:
