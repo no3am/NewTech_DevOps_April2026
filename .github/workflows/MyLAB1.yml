@@ -37,12 +37,17 @@ jobs:
           black .
         working-directory: ${{ matrix.working-directory }}
 
+      - name: Commit and Push formatting fixes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: automated format fixes via Black"
+          branch: ${{ github.head_ref || github.ref_name }}
+
       - name: lint with flake8
         run: |
           pip install flake8
-          flake8 .
+          flake8 . --format='::warning file=%(path)s,line=%(row)d,col=%(col)d::[Flake8] %(code)s: %(text)s' --exit-zero
         working-directory: ${{ matrix.working-directory }}
-        continue-on-error: true
 
       - name: Run tests
         run: python -m pytest test_calculator.py --cov=calculator --cov-report=term-missing
