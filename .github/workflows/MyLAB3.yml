@@ -61,7 +61,7 @@ jobs:
         working-directory: ${{ matrix.working-directory }}
 
       - name: UploadSave coverage report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lab3-coverage-validator-report
           path: ./GH_Actions/lab3/coverage_validator.xml
@@ -116,7 +116,7 @@ jobs:
         working-directory: ${{ matrix.working-directory }}
 
       - name: Save coverage report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lab3-coverage-transformer-report
           path: ./GH_Actions/lab3/coverage_transformer.xml
@@ -171,7 +171,7 @@ jobs:
         working-directory: ${{ matrix.working-directory }}
 
       - name: Save coverage report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lab3-coverage-reporter-report
           path: ./GH_Actions/lab3/coverage_reporter.xml
@@ -202,7 +202,7 @@ jobs:
         working-directory: ${{ matrix.working-directory }}
 
       - name: Save Bandit report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lab3-bandit-report
           path: ./GH_Actions/lab3/bandit_report.xml
