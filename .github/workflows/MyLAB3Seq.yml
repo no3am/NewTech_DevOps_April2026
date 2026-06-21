@@ -186,9 +186,9 @@ jobs:
     steps:
       - name: Print job Status
         run: |
-          echo "Validator Status:   ${{ needs.test-validator.result }}"
-          echo "Transformer Status: ${{ needs.test-transformer.result }}"
-          echo "Reporter Status:    ${{ needs.test-reporter.result }}"
+          echo "Validator Status:   ${{ needs.Test-Validator.result }}"
+          echo "Transformer Status: ${{ needs.Test-Transformer.result }}"
+          echo "Reporter Status:    ${{ needs.Test-Reporter.result }}"
 
   Security-Scan:
     runs-on: ubuntu-latest
@@ -201,7 +201,7 @@ jobs:
         run: |
           pip install bandit
           bandit -r . --format=xml --output=bandit_report.xml
-        working-directory: ${{ matrix.working-directory }}
+        working-directory: "./GH_Actions/lab3"
 
       - name: Save Bandit report artifact
         uses: actions/upload-artifact@v7
