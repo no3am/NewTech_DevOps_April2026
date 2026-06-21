@@ -40,11 +40,11 @@ jobs:
           black .
         working-directory: ${{ matrix.working-directory }}
 
-      - name: Commit and Push formatting fixes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: automated format fixes via Black"
-          branch: main
+      # - name: Commit and Push formatting fixes
+      #   uses: stefanzweifel/git-auto-commit-action@v5
+      #   with:
+      #     commit_message: "chore: automated format fixes via Black"
+      #     branch: main
 
       - name: lint with flake8
         run: |
