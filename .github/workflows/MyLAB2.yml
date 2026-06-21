@@ -52,7 +52,13 @@ jobs:
           flake8 . --format='::warning file=%(path)s,line=%(row)d,col=%(col)d::[Flake8] %(code)s: %(text)s' --exit-zero #force flake 8 to code 0 while still echoing the errors.
         working-directory: ${{ matrix.working-directory }}
 
-      - name: Run tests
+      - name: Run tests for LAB1
+        run: |
+          pip install pytest pytest-cov
+          python -m pytest test_calculator.py --cov=calculator --cov-report=term-missing
+        working-directory: "./GH_Actions/lab1"
+
+      - name: Run tests for LAB2
         run: |
           pip install pytest pytest-cov
           python -m pytest test_calculator.py --cov=calculator --cov-report=term-missing
