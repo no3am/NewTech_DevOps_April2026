@@ -11,8 +11,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code (changes more frequently than dependencies)
 COPY server.py .
 
-# Create a non-root user — running as root inside a container is a security risk
-RUN useradd --no-create-home --shell /bin/false appuser
+# Create a non-root user and give ownership of the working directory
+# Without chown, appuser can read files but cannot write data.json to /app
+RUN useradd --no-create-home --shell /bin/false appuser \
+    && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 5000
