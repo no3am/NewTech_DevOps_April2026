@@ -1,0 +1,15 @@
+# Development overrides — merge on top of docker-compose.yml with:
+# docker compose -f docker-compose.yml -f docker-compose.override.yml up
+
+services:
+
+  sensor-server:
+    # Bind mount source code so edits are reflected without rebuilding
+    volumes:
+      - sensor-data:/data
+      - ../lab1_dockerfiles/server/server.py:/app/server.py
+    environment:
+      - DATA_FILE=/data/data.json
+      - FLASK_DEBUG=1
+    # Don't auto-restart in dev — let it crash so you see errors clearly
+    restart: "no"

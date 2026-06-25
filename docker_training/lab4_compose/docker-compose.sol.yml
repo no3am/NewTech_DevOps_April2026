@@ -1,0 +1,44 @@
+services:
+
+  sensor-server:
+    build:
+      context: ../lab1_dockerfiles/server
+      dockerfile: Dockerfile.sol
+    container_name: sensor-server
+    ports:
+      - "5000:5000"
+    volumes:
+      - sensor-data:/data
+    environment:
+      - DATA_FILE=/data/data.json
+    networks:
+      - sensor-net
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    restart: unless-stopped
+
+  sensor-client:
+    build:
+      context: ../lab1_dockerfiles/client
+      dockerfile: Dockerfile.sol
+    environment:
+      - SERVER_URL=http://sensor-server:5000
+      - NUM_READINGS=10
+    networks:
+      - sensor-net
+    depends_on:
+      sensor-server:
+        condition: service_healthy
+    profiles:
+      - client
+
+volumes:
+  sensor-data:
+
+networks:
+  sensor-net:
+    driver: bridge
