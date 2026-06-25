@@ -245,8 +245,13 @@ docker run -d --name my-server --network sensor-net sensor-server
 docker run --rm -it --network sensor-net python:3.11-slim bash
 
 # From inside the container, test connectivity:
-curl http://my-server:5000/health         # Test by name
-curl http://my-server:5000/stats
+# Note: curl is not installed on slim images — use Python instead
+python3 -c "import urllib.request; print(urllib.request.urlopen('http://my-server:5000/health').read().decode())"
+python3 -c "import urllib.request; print(urllib.request.urlopen('http://my-server:5000/stats').read().decode())"
+
+# Or install curl on the fly (lost when container exits)
+apt-get update && apt-get install -y curl
+curl http://my-server:5000/health
 exit
 ```
 
