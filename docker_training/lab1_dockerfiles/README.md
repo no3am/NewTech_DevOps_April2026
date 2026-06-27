@@ -3,17 +3,19 @@
 ## Overview
 
 In this lab, you will containerize a two-service application:
+
 - **Server** — A Flask API that collects temperature and humidity sensor readings and stores them to a file
 - **Client** — A Python script that simulates sensors sending data, then prints statistics from the server
 
 By the end of this lab you will be able to:
+
 - Write a `Dockerfile` from scratch
 - Build and run Docker images
 - Understand and fix Docker layer caching
 - Use `.dockerignore` to keep images lean
 - Secure your container with a non-root user
 - Add a `HEALTHCHECK` instruction
-- *(Bonus)* Use multi-stage builds
+- _(Bonus)_ Use multi-stage builds
 
 ---
 
@@ -23,16 +25,17 @@ By the end of this lab you will be able to:
 
 A Flask REST API with four endpoints:
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/health` | Health check — returns status and reading count |
-| `GET` | `/readings` | List all stored sensor readings |
-| `POST` | `/readings` | Submit a new reading |
-| `GET` | `/stats` | Min / max / avg for temperature and humidity |
+| Method | Path        | Description                                     |
+| ------ | ----------- | ----------------------------------------------- |
+| `GET`  | `/health`   | Health check — returns status and reading count |
+| `GET`  | `/readings` | List all stored sensor readings                 |
+| `POST` | `/readings` | Submit a new reading                            |
+| `GET`  | `/stats`    | Min / max / avg for temperature and humidity    |
 
 The server stores all data in a local file (`data.json`), configurable via the `DATA_FILE` environment variable.
 
 **Example — submit a reading:**
+
 ```bash
 curl -X POST http://localhost:5000/readings \
   -H "Content-Type: application/json" \
@@ -40,6 +43,7 @@ curl -X POST http://localhost:5000/readings \
 ```
 
 **Example — get stats:**
+
 ```bash
 curl http://localhost:5000/stats
 ```
@@ -49,15 +53,16 @@ curl http://localhost:5000/stats
 ### Client (`client/client.py`)
 
 A one-shot Python script that:
+
 1. Sends `NUM_READINGS` random readings to the server
 2. Fetches and prints stats after all readings are submitted
 
 **Configuration via environment variables:**
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SERVER_URL` | `http://localhost:5000` | Base URL of the sensor server |
-| `NUM_READINGS` | `5` | How many readings to send |
+| Variable       | Default                 | Description                   |
+| -------------- | ----------------------- | ----------------------------- |
+| `SERVER_URL`   | `http://localhost:5000` | Base URL of the sensor server |
+| `NUM_READINGS` | `5`                     | How many readings to send     |
 
 ---
 
@@ -85,6 +90,7 @@ Open `client/client.py` and answer:
 ### Step 2: Dockerfile for the Server
 
 Create `server/Dockerfile`. Requirements:
+
 - Use `python:3.11-slim` as the base image
 - Set `/app` as the working directory
 - Copy and install dependencies from `requirements.txt`
@@ -93,6 +99,7 @@ Create `server/Dockerfile`. Requirements:
 - Set the startup command
 
 **Build and test:**
+
 ```bash
 # Build the image
 docker build -t sensor-server ./server
@@ -123,21 +130,24 @@ docker stop my-server && docker rm my-server
 ### Step 3: Dockerfile for the Client
 
 Create `client/Dockerfile`. Similar to the server, but:
+
 - No port needs to be exposed
 - The startup command runs `client.py`
 
 **Build:**
+
 ```bash
 docker build -t sensor-client ./client
 ```
 
-> **Note:** Getting the client and server containers to talk requires Docker networking, which is covered in **Lab 2**. For now, just verify the image builds successfully.  
+> **Note:** Getting the client and server containers to talk requires Docker networking, which is covered in **Lab 2**. For now, just verify the image builds successfully.
 > If you want to test end-to-end now, see the tip below.
 
 <details>
 <summary>💡 Tip: Test the client against the server right now (optional)</summary>
 
 On **Docker Desktop** (Mac/Windows):
+
 ```bash
 docker run --rm \
   -e SERVER_URL=http://host.docker.internal:5000 \
@@ -145,6 +155,7 @@ docker run --rm \
 ```
 
 On **Linux**:
+
 ```bash
 docker run --rm \
   --add-host=host.docker.internal:host-gateway \
@@ -153,6 +164,7 @@ docker run --rm \
 ```
 
 This works by routing traffic through the host machine. In Lab 2 you'll do this properly with a Docker network.
+
 </details>
 
 > **Solution:** `client/Dockerfile.sol`
@@ -177,9 +189,9 @@ docker build -t sensor-server ./server
 
 **What did you observe?**
 
-If your Dockerfile copies all files *before* installing dependencies, every minor code change causes Docker to re-run `pip install` — even though `requirements.txt` didn't change. In a CI/CD pipeline this wastes minutes on every commit.
+If your Dockerfile copies all files _before_ installing dependencies, every minor code change causes Docker to re-run `pip install` — even though `requirements.txt` didn't change. In a CI/CD pipeline this wastes minutes on every commit.
 
-**The fix:** Copy `requirements.txt` and run `pip install` *before* copying the application code.
+**The fix:** Copy `requirements.txt` and run `pip install` _before_ copying the application code.
 
 ```dockerfile
 # GOOD — requirements are cached separately from code
@@ -216,6 +228,7 @@ data.json
 ```
 
 **Verify it works:**
+
 ```bash
 # Check image size before and after
 docker images sensor-server
@@ -230,11 +243,12 @@ By default, processes inside containers run as `root`. If an attacker escapes th
 Add these lines to both Dockerfiles (after `pip install`, before copying app code):
 
 ```dockerfile
-RUN useradd --no-create-home --shell /bin/false appuser
+RUN useradd --no-create-home --shell /bin/false appuser  && chown -R appuser:appuser /app
 USER appuser
 ```
 
 **Verify:**
+
 ```bash
 docker run --rm sensor-server whoami
 # Should print: appuser
@@ -256,6 +270,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 ```
 
 **Verify:**
+
 ```bash
 docker run -d -p 5000:5000 --name test-server sensor-server
 
@@ -295,6 +310,7 @@ CMD ["python3", "server.py"]
 ```
 
 **Compare sizes:**
+
 ```bash
 docker build -t sensor-server-multi -f Dockerfile.multistage ./server
 docker images | grep sensor-server
