@@ -40,10 +40,10 @@ resource "aws_s3_bucket" "app_storage" {
 resource "aws_s3_bucket_public_access_block" "app_storage" {
   bucket = aws_s3_bucket.app_storage.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 # ── Versioning ─────────────────────────────────────────────────────────────────
