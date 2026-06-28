@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read #to pass Checkov security criteria.
+  pull-requests: write #to give the workflow permission to comment on PRs with plan details.
 
 jobs:
   build:
@@ -73,14 +74,25 @@ jobs:
         run: terraform output
         working-directory: ${{ matrix.working-directory }}
 
-    #   - name: Terraform Destroy
-    #     if: github.event_name == 'push'
-    #     run: terraform destroy tfplan -auto-approve
+      #############################################################
+      # Bonus github-script
+      #############################################################
 
-    #   - uses: actions/github-script@v7
-    #     if: github.event_name == 'pull_request'
-    #     env:
-    #     PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-    #     with:
-    #         github-token: ${{ secrets.GITHUB_TOKEN }}
-    #         script: |
+      - name: Post Terraform plan details as PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('tfplan.txt', 'utf8');
+            const truncated = plan.length > 65000 ? plan.substring(0, 65000) + '\n... (truncated)' : plan;
+
+            const body = `## Terraform Plan
+            \`\`\`terraform
+            ${truncated}
+            \`\`\``;
+
+            await github.rest.issues.createComment({
+              body: body
+            });
