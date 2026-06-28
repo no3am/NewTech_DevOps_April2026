@@ -64,7 +64,7 @@ jobs:
       - name: Terraform Apply
         id: apply
         if: steps.plan.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply tfplan -auto-approve
+        run: terraform apply tfplan
 
       - name: Terraform output
         id: output
