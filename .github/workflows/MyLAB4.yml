@@ -19,7 +19,7 @@ jobs:
       matrix:
         #os: [ubuntu-latest, windows-latest, macos-latest]
         os: [ubuntu-latest]
-        terraform-version: ["1.14.6"]
+        terraform-version: ["1.14.6", "1.13.0", "1.12.0"]
         working-directory: ["./GH_Actions/lab4/terraform"]
 
     env:
@@ -37,6 +37,15 @@ jobs:
         uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ matrix.terraform-version }}
+
+      - name: Cache Terraform Providers
+        id: cache-providers
+        uses: actions/cache@v6
+        with:
+          path: .terraform
+          key: terraform-${{ matrix.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ matrix.os }}-
 
       - name: Terraform Init
         id: init
