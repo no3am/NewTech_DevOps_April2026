@@ -1,32 +1,34 @@
 name: Python Tests - Lab 1 (Pure Bash)
 
-on:
-  workflow_dispatch   # disabled — run manually only
+on: workflow_dispatch # disabled — run manually only
+
+permissions:
+  contents: read #to pass Checkov security criteria.
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Clone repository
-      run: |
-        git clone https://x-access-token:${{ github.token }}@${{ github.server_url != 'https://github.com' && github.server_url || 'github.com' }}/${{ github.repository }}.git repo
-        cd repo
-        git checkout ${{ github.sha }}
+      - name: Clone repository
+        run: |
+          git clone https://x-access-token:${{ github.token }}@${{ github.server_url != 'https://github.com' && github.server_url || 'github.com' }}/${{ github.repository }}.git repo
+          cd repo
+          git checkout ${{ github.sha }}
 
-    - name: Verify python
-      run: |
-        python --version
-        which python
+      - name: Verify python
+        run: |
+          python --version
+          which python
 
-    - name: Install dependencies
-      run: |
-        cd repo/GH_Actions/lab1
-        python3 -m pip install --upgrade pip
-        pip3 install pytest pytest-cov
-        if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
+      - name: Install dependencies
+        run: |
+          cd repo/GH_Actions/lab1
+          python3 -m pip install --upgrade pip
+          pip3 install pytest pytest-cov
+          if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
 
-    - name: Run tests
-      run: |
-        cd repo/GH_Actions/lab1
-        python3 -m unittest test_calculator.py -v
+      - name: Run tests
+        run: |
+          cd repo/GH_Actions/lab1
+          python3 -m unittest test_calculator.py -v

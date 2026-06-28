@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: write #to give the workflow permission to commit and push changes back to the repository. not needed right now.
+  contents: read #to pass Checkov security criteria.
 
 jobs:
   Test-Validator:
@@ -42,11 +42,6 @@ jobs:
           black .
         working-directory: ${{ matrix.working-directory }}
 
-      # - name: Commit and Push formatting fixes #to automatically commit and push any formatting fixes made by Black.
-      #   uses: stefanzweifel/git-auto-commit-action@v5
-      #   with:
-      #     commit_message: "chore: automated format fixes via Black"
-      #     branch: main
       - name: lint with flake8
         run: |
           pip install flake8
@@ -98,11 +93,6 @@ jobs:
           black .
         working-directory: ${{ matrix.working-directory }}
 
-      # - name: Commit and Push formatting fixes #to automatically commit and push any formatting fixes made by Black.
-      #   uses: stefanzweifel/git-auto-commit-action@v5
-      #   with:
-      #     commit_message: "chore: automated format fixes via Black"
-      #     branch: main
       - name: lint with flake8
         run: |
           pip install flake8
@@ -154,11 +144,6 @@ jobs:
           black .
         working-directory: ${{ matrix.working-directory }}
 
-      # - name: Commit and Push formatting fixes #to automatically commit and push any formatting fixes made by Black.
-      #   uses: stefanzweifel/git-auto-commit-action@v5
-      #   with:
-      #     commit_message: "chore: automated format fixes via Black"
-      #     branch: main
       - name: lint with flake8
         run: |
           pip install flake8

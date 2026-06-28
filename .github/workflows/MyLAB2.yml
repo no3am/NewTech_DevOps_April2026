@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: write #to give the workflow permission to commit and push changes back to the repository. not needed right now.
+  contents: read #to pass Checkov security criteria.
 
 jobs:
   LAB2_Test:

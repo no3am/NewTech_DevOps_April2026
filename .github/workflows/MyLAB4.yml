@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read #to pass Checkov security criteria.
+
 jobs:
   build:
     strategy: #to use the same workflow to test in multiple Python versions and the usage of variables.

@@ -2,11 +2,14 @@ name: first workflow
 
 on: workflow_dispatch
 
-jobs: 
-    say-hello:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Say hello
-              run: echo "Hello, world!"
-            - name: print goodbye
-              run: echo "Goodbye, world!"
+permissions:
+  contents: read #to pass Checkov security criteria.
+
+jobs:
+  say-hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Say hello
+        run: echo "Hello, world!"
+      - name: print goodbye
+        run: echo "Goodbye, world!"

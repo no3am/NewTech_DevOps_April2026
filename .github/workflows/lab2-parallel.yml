@@ -10,6 +10,9 @@ on:
   #   branches: [ main ]
   workflow_dispatch: # enable manual trigger for testing
 
+permissions:
+  contents: read #to pass Checkov security criteria.
+
 # ─────────────────────────────────────────────────────────────────────────────
 # The one change from the sequential version:
 #
