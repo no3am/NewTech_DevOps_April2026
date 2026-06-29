@@ -1,80 +1,155 @@
 # Docker Compose Lab 2: The Easy Way
 
-This lab demonstrates how Docker Compose simplifies multi-container applications compared to manual shell scripts.
+This lab takes the exact same two-container application from Lab 1 and replaces the manual shell script with a single `docker-compose.yml` file.
 
-## Old Way vs New Way
+---
 
-### The Old Way (Manual Script)
-- Create network manually: `docker network create class-net`
-- Start database container with all flags: `docker run -d --name postgres-db --network class-net -e ...`
-- Build image: `docker build -t flask-app .`
-- Start web container with all flags: `docker run -d --name flask-app --network class-net -p 8000:7000 -e ...`
-- **Result**: 30+ lines of shell script, easy to make mistakes, hard to maintain
+## Step 1: Run the Manual Script First
 
-### The New Way (Docker Compose)
-- One file: `docker-compose.yml`
-- One command: `docker-compose up`
-- **Result**: Clean, declarative, version-controlled configuration
+Before looking at Compose, run Lab 1 the old way so you feel the pain:
 
-## Key Benefits
+```bash
+cd ../docker_compose_lab1
+bash manual_deploy.sh
+```
 
-1. **Automatic Network Creation**: No need for `docker network create` - Compose handles it
-2. **Service Discovery**: Services can find each other by name (e.g., `db` instead of IP addresses)
-3. **Dependency Management**: `depends_on` ensures correct startup order
-4. **Volume Management**: Named volumes persist data automatically
-5. **Single Command**: Start everything with `docker-compose up`
+It works — but look at what it took: manual network creation, a fragile `sleep 5`, 30+ lines of flags repeated across every `docker run` call.
 
-## How to Run
+Now clean it up:
+```bash
+docker stop flask-app postgres-db
+docker rm flask-app postgres-db
+docker network rm class-net
+```
 
-1. **Start the application:**
-   ```bash
-   docker-compose up
-   ```
+---
 
-2. **Start in detached mode (background):**
-   ```bash
-   docker-compose up -d
-   ```
+## Step 2: Read the Compose File as a Translation
 
-3. **View logs:**
-   ```bash
-   docker-compose logs
-   ```
+Open `manual_deploy.sh` and `docker-compose.yml` side by side. Every line in the script has a direct equivalent in the compose file:
 
-4. **Stop the application:**
-   ```bash
-   docker-compose down
-   ```
+| `manual_deploy.sh` | `docker-compose.yml` |
+|--------------------|----------------------|
+| `docker network create class-net` | `networks: app-network:` |
+| `docker run --name flask-app` | `services: web:` |
+| `docker build -t flask-app .` | `build: .` |
+| `-p 8000:7000` | `ports: - "8000:7000"` |
+| `-e DB_HOST=postgres-db` | `environment: - DB_HOST=db` |
+| `--network class-net` | `networks: - app-network` |
+| `sleep 5` | `depends_on: - db` |
+| `postgres:15` (no Dockerfile) | `image: postgres:15` |
+| *(data lost on stop)* | `volumes: postgres-data:` |
 
-5. **Stop and remove volumes (clean slate):**
-   ```bash
-   docker-compose down -v
-   ```
+### Key concepts to understand:
 
-6. **Rebuild after code changes:**
-   ```bash
-   docker-compose up --build
-   ```
+**What is a "service"?**
+A service is everything you'd pass to one `docker run` command. The service name (`web`, `db`) replaces `--name` and also becomes the container's DNS hostname on the network.
 
-## Access the Application
+**`build` vs `image`**
+- `build: .` → run `docker build` in this directory (used for your own app)
+- `image: postgres:15` → pull this directly from Docker Hub (used for public images)
 
-Once running, access the Flask app at: http://localhost:8000
+**Service names as DNS**
+In the script, `DB_HOST=postgres-db` had to exactly match `--name postgres-db`. In Compose, `DB_HOST=db` works because Compose automatically registers every service name as a DNS entry. No more hunting for IP addresses.
 
-You should see: `Connected to DB!`
+**`depends_on`**
+Better than `sleep 5` — Compose waits for the `db` container to *start* before launching `web`. However it doesn't wait for Postgres to be *ready to accept connections*. You'll fix this properly in Lab 3 with `condition: service_healthy`.
+
+**Volumes and networks at the bottom**
+The top-level `volumes:` and `networks:` sections are declarations. Compose provisions them automatically on `up` and prefixes them with the project name (e.g., `docker_compose_lab2_postgres-data`).
+
+---
+
+## Step 3: Run It
+
+```bash
+# From the docker_compose_lab2/ directory:
+docker compose up -d
+```
+
+That's it. One command replaced the entire script.
+
+```bash
+# Check everything is running
+docker compose ps
+
+# Access the app
+curl http://localhost:8000
+# Expected: Connected to DB!
+
+# Follow logs
+docker compose logs -f
+```
+
+---
+
+## Step 4: Verify the Concepts
+
+**Check DNS resolution is working:**
+```bash
+# Open a shell inside the web container
+docker compose exec web sh
+
+# Resolve the db service name — should return an IP
+python3 -c "import socket; print(socket.gethostbyname('db'))"
+exit
+```
+
+**Check the volume persists data:**
+```bash
+# Tear down containers (NOT volumes)
+docker compose down
+
+# Bring them back up
+docker compose up -d
+
+# Data is still there
+curl http://localhost:8000
+```
+
+**Check what happens without the volume:**
+```bash
+docker compose down -v   # removes volumes too
+docker compose up -d
+curl http://localhost:8000
+# Still works — but any data written to the DB is gone
+```
+
+---
+
+## Step 5: Teardown
+
+```bash
+# Stop and remove containers + network (keep volume)
+docker compose down
+
+# Stop and remove everything including volume
+docker compose down -v
+```
+
+---
+
+## Key Commands
+
+```bash
+docker compose up -d          # Start stack detached
+docker compose up -d --build  # Rebuild images then start
+docker compose down           # Stop and remove containers/networks
+docker compose down -v        # Also remove volumes
+docker compose ps             # Show service status
+docker compose logs -f        # Follow all logs
+docker compose exec <svc> sh  # Shell into a running service
+```
+
+---
 
 ## Check Your Understanding
 
-**Question**: In the manual script, we had to run `docker network create class-net`. Where did that command go in Docker Compose?
+**Q: In the manual script we ran `docker network create class-net`. Where did that go?**
+Compose creates networks declared in `networks:` automatically on `up`. You never run `docker network create` manually.
 
-**Answer**: Docker Compose automatically creates networks defined in the `networks:` section. You don't need to manually create them - Compose handles network creation, service discovery, and DNS resolution automatically when you run `docker-compose up`.
+**Q: The script used `--name postgres-db` and then `DB_HOST=postgres-db`. In Compose, the service is named `db` and `DB_HOST=db`. Why does that work?**
+Compose registers each service name as a DNS hostname on the shared network. Any container on the same network can reach `db` by name — no IP needed.
 
-## What Happens Behind the Scenes
-
-When you run `docker-compose up`, Docker Compose:
-1. Creates the network `docker_compose_lab2_app-network` (prefixed with project name)
-2. Creates the volume `docker_compose_lab2_postgres-data`
-3. Starts the `db` service first (because `web` depends on it)
-4. Starts the `web` service
-5. Sets up DNS so `web` can resolve `db` as a hostname
-
-All of this happens automatically - no manual commands needed!
+**Q: `depends_on: - db` replaced `sleep 5`. Is it better?**
+Slightly — it waits for the container to start rather than guessing with a timer. But it still doesn't guarantee Postgres is ready to accept connections. Lab 3 shows the proper fix.
