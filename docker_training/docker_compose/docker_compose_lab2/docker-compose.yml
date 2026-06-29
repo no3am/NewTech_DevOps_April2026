@@ -15,6 +15,7 @@ services:
     depends_on:
       # This ensures 'db' starts before 'web'
       # Docker Compose will wait for 'db' to be running before starting 'web'
+      # Remember to talk about healthchecks for more robust dependency management
       - db
     networks:
       - app-network  # All services on same network can communicate
