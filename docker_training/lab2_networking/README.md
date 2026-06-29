@@ -5,6 +5,7 @@
 In Lab 1, the client couldn't reach the server without the `host.docker.internal` workaround. In this lab you'll understand why, and fix it properly using Docker networks.
 
 By the end of this lab you will be able to:
+
 - Explain how the default `bridge` network works and its limitations
 - Create a custom bridge network with automatic container DNS
 - Connect containers so they communicate by name
@@ -12,6 +13,7 @@ By the end of this lab you will be able to:
 - Inspect and debug container networks
 
 **Prerequisites:** Images from Lab 1 must be built.
+
 ```bash
 docker build -t sensor-server ./lab1/server
 docker build -t sensor-client ./lab1/client
@@ -58,7 +60,7 @@ docker run --rm -e SERVER_URL=http://my-server:5000 sensor-client
 
 ```bash
 # Get the server container's IP address
-docker inspect my-server --format='{{.NetworkSettings.IPAddress}}'
+docker inspect my-server --format='{{.NetworkSettings.Networks.bridge.IPAddress}}'
 # Example output: 172.17.0.2
 
 # Run the client using the IP directly
@@ -71,13 +73,14 @@ docker run --rm -e SERVER_URL=http://172.17.0.2:5000 sensor-client
 docker stop my-server && docker rm my-server
 docker run -d --name my-server sensor-server
 
-docker inspect my-server --format='{{.NetworkSettings.IPAddress}}'
+docker inspect my-server --format='{{.NetworkSettings.Networks.bridge.IPAddress}}'
 # IP may be different now
 ```
 
 **Conclusion:** IP-based discovery doesn't work in real systems. We need DNS.
 
 ### Cleanup
+
 ```bash
 docker stop my-server && docker rm my-server
 ```
@@ -93,6 +96,7 @@ docker network create sensor-net
 ```
 
 Inspect it:
+
 ```bash
 docker network inspect sensor-net
 ```
@@ -126,6 +130,7 @@ docker network inspect sensor-net
 Now look at the `"Containers"` section — you'll see `my-server` listed with its IP and MAC address.
 
 ### Cleanup
+
 ```bash
 docker stop my-server && docker rm my-server
 ```
@@ -147,12 +152,14 @@ docker run -d \
 ```
 
 **Test 1 — from host machine:**
+
 ```bash
 curl http://localhost:5000/health
 # Connection refused — port is not published to the host
 ```
 
 **Test 2 — from another container on the same network:**
+
 ```bash
 docker run --rm \
   --network sensor-net \
@@ -175,6 +182,7 @@ docker run -d \
 ```
 
 **Test again from host:**
+
 ```bash
 curl http://localhost:5000/health
 # Now works
@@ -182,15 +190,16 @@ curl http://localhost:5000/health
 
 ### Key Takeaway
 
-| Scenario | Needs `-p`? |
-|----------|------------|
-| Container → container (same network) | No |
-| Host machine → container | Yes |
-| Browser / external traffic → container | Yes |
+| Scenario                               | Needs `-p`? |
+| -------------------------------------- | ----------- |
+| Container → container (same network)   | No          |
+| Host machine → container               | Yes         |
+| Browser / external traffic → container | Yes         |
 
 **Rule of thumb:** Only publish ports that external users or services need to access directly. Internal services should stay internal.
 
 ### Cleanup
+
 ```bash
 docker stop my-server && docker rm my-server
 ```
@@ -224,6 +233,7 @@ docker run --rm \
 Useful when you can't restart a running container.
 
 ### Cleanup
+
 ```bash
 docker stop my-server my-client
 docker rm my-server my-client
@@ -234,7 +244,7 @@ docker network rm sensor-net
 
 ## Part 5: Debugging Inside a Container
 
-When networking isn't working, it helps to debug from *inside* the container.
+When networking isn't working, it helps to debug from _inside_ the container.
 
 ```bash
 # Create the network and start the server
@@ -256,6 +266,7 @@ exit
 ```
 
 You can also exec into a running container:
+
 ```bash
 docker exec -it my-server sh
 # Now you're inside the server container
@@ -265,6 +276,7 @@ exit
 ```
 
 ### Cleanup
+
 ```bash
 docker stop my-server && docker rm my-server
 docker network rm sensor-net
@@ -281,6 +293,7 @@ docker run --rm --network host sensor-server
 With `--network host`, the container shares the host's network stack directly — no isolation. Port 5000 is immediately accessible on the host without `-p`.
 
 **Why this is a bad idea:**
+
 - Removes network isolation entirely
 - Container can access (and bind to) any port on the host
 - A bug or vulnerability in the container can affect the host's network
