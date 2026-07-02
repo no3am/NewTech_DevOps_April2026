@@ -7,7 +7,7 @@ services:
     # Bind mount source code so edits are reflected without rebuilding
     volumes:
       - sensor-data:/data
-      - ../lab1_dockerfiles/server/server.py:/app/server.py
+      - ../../lab1_dockerfiles/server/server.py:/app/server.py
     environment:
       - DATA_FILE=/data/data.json
       - FLASK_DEBUG=1

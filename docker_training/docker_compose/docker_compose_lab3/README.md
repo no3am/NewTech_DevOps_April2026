@@ -60,14 +60,14 @@ Compose automatically creates the declared volumes and networks when you run `do
 
 ### Step 1: Create `docker-compose.yml`
 
-Create `lab4_compose/docker-compose.yml` and add just the server service:
+Create `docker_compose_lab3/docker-compose.yml` and add just the server service:
 
 ```yaml
 services:
 
   sensor-server:
     build:
-      context: ../lab1_dockerfiles/server
+      context: ../../lab1_dockerfiles/server
       dockerfile: Dockerfile.sol
     ports:
       - "5000:5000"
@@ -83,7 +83,7 @@ volumes:
 ### Step 2: Build and start
 
 ```bash
-# From the lab4_compose/ directory:
+# From the docker_compose_lab3/ directory:
 
 # Build the image(s)
 docker compose build
@@ -117,7 +117,7 @@ docker volume ls
 docker network ls
 ```
 
-Notice Compose prefixed everything with the project name (e.g., `lab4_compose_sensor-data`, `lab4_compose_sensor-net`). This keeps stacks isolated from each other.
+Notice Compose prefixed everything with the project name (e.g., `docker_compose_lab3_sensor-data`, `docker_compose_lab3_sensor-net`). This keeps stacks isolated from each other.
 
 ---
 
@@ -130,7 +130,7 @@ services:
 
   sensor-server:
     build:
-      context: ../lab1_dockerfiles/server
+      context: ../../lab1_dockerfiles/server
       dockerfile: Dockerfile.sol
     ports:
       - "5000:5000"
@@ -165,7 +165,7 @@ services:
 
   sensor-server:
     build:
-      context: ../lab1_dockerfiles/server
+      context: ../../lab1_dockerfiles/server
       dockerfile: Dockerfile.sol
     ports:
       - "5000:5000"
@@ -222,7 +222,7 @@ Add the client to your compose file but **do not** give it ports or restart — 
 ```yaml
   sensor-client:
     build:
-      context: ../lab1_dockerfiles/client
+      context: ../../lab1_dockerfiles/client
       dockerfile: Dockerfile.sol
     environment:
       - SERVER_URL=http://sensor-server:5000
@@ -256,7 +256,7 @@ The client fails if it starts before the server is ready. Add `depends_on` to en
 ```yaml
   sensor-client:
     build:
-      context: ../lab1_dockerfiles/client
+      context: ../../lab1_dockerfiles/client
       dockerfile: Dockerfile.sol
     environment:
       - SERVER_URL=http://sensor-server:5000

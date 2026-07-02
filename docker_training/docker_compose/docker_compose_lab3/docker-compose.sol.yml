@@ -2,7 +2,7 @@ services:
 
   sensor-server:
     build:
-      context: ../lab1_dockerfiles/server
+      context: ../../lab1_dockerfiles/server
       dockerfile: Dockerfile.sol
     container_name: sensor-server
     ports:
@@ -23,7 +23,7 @@ services:
 
   sensor-client:
     build:
-      context: ../lab1_dockerfiles/client
+      context: ../../lab1_dockerfiles/client
       dockerfile: Dockerfile.sol
     environment:
       - SERVER_URL=http://sensor-server:5000
