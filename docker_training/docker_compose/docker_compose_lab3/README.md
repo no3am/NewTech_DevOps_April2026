@@ -212,11 +212,6 @@ docker compose ps
 
 The client is a one-shot container — it sends readings and exits. The right tool for this in Compose is `docker compose run`, not adding it as a permanent service.
 
-First, build the client image:
-```bash
-docker compose build   # if you add the build block below
-```
-
 Add the client to your compose file but **do not** give it ports or restart — it will be invoked on demand:
 
 ```yaml
@@ -231,8 +226,11 @@ Add the client to your compose file but **do not** give it ports or restart — 
       - sensor-net
 ```
 
-Run it:
+Build and run it:
 ```bash
+# Build the client image
+docker compose build sensor-client
+
 # Run the client once (exits when done)
 docker compose run --rm sensor-client
 
@@ -322,9 +320,18 @@ docker compose -f docker-compose.yml -f docker-compose.override.example.yml up -
 ```
 
 An example dev override (`docker-compose.override.example.yml`) is included in this lab. It:
-- Bind mounts `server.py` so code changes are reflected without rebuilding
-- Enables Flask debug mode
-- Disables restart so crash messages are visible immediately
+- Bind mounts `server.py` so edits to the source file are picked up by Flask's reloader without rebuilding the image
+- Enables Flask debug mode (auto-reloader + verbose errors) via `FLASK_DEBUG=1` — the server reads this env var and passes `debug=True` to `app.run()`
+- Disables `restart: unless-stopped` so the container stays down on a crash, making error output easy to read
+
+To try it:
+```bash
+# Start with the dev overrides applied
+docker compose -f docker-compose.yml -f docker-compose.override.example.yml up -d
+
+# Now edit ../../lab1_dockerfiles/server/server.py — Flask reloads automatically
+# No docker compose build needed while the bind mount is active
+```
 
 > **Tip:** Add `docker-compose.override.yml` to `.gitignore` so developer-specific settings don't leak into the repo. Commit `docker-compose.override.example.yml` as documentation.
 

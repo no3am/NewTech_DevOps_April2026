@@ -14,7 +14,8 @@ COPY server.py .
 # Create a non-root user and give ownership of the working directory
 # Without chown, appuser can read files but cannot write data.json to /app
 RUN useradd --no-create-home --shell /bin/false appuser \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    && mkdir /data && chown appuser:appuser /data
 USER appuser
 
 EXPOSE 5000

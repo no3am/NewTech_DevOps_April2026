@@ -1,5 +1,5 @@
 # Development overrides — merge on top of docker-compose.yml with:
-# docker compose -f docker-compose.yml -f docker-compose.override.yml up
+# docker compose -f docker-compose.yml -f docker-compose.override.example.yml up
 
 services:
 
