@@ -30,9 +30,9 @@ services:
       - NUM_READINGS=10
     networks:
       - sensor-net
-    # depends_on:
-    #   sensor-server:
-    #     condition: service_healthy
+    depends_on:
+      sensor-server:
+        condition: service_healthy
     # profiles:
     #   - client
 
