@@ -241,14 +241,6 @@ docker-compose down -v
 4. **Kubernetes Pattern**: This is exactly how Controllers work in Kubernetes
 5. **Scalable**: Can watch thousands of keys efficiently
 
-## Next Steps
-
-- Experiment with watching multiple keys
-- Try watching a key prefix (e.g., `/config/*`)
-- Learn about etcd transactions
-- Explore Kubernetes Controller patterns
-- Study how etcd handles network partitions
-
 ## Bonus Challenges
 
 1. **Watch Multiple Keys**: Modify watcher.py to watch both `/config/background_color` and `/config/font_size`
