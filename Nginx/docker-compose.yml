@@ -3,8 +3,6 @@ version: '3.8'
 services:
   app:
     build: .
-    deploy:
-      replicas: 3
 
   nginx:
     image: nginx:alpine

@@ -2,151 +2,186 @@
 
 ## Objective
 
-Learn how Nginx acts as a load balancer, distributing incoming requests across multiple backend containers using Round Robin algorithm.
+Learn how Nginx acts as a load balancer, distributing incoming requests across multiple backend containers using the Round Robin algorithm.
 
 ## What You'll See
 
-When you refresh the page multiple times, you'll see different Container IDs. This demonstrates that Nginx is distributing requests across 3 different Flask containers.
+When you refresh the page multiple times, you'll see different container hostnames. This demonstrates that Nginx is distributing requests across 3 Flask containers.
 
 ## Prerequisites
 
 - Docker installed
 - Docker Compose installed
 
+## Architecture
+
+```
+Browser / curl
+      ↓
+  Nginx (Port 80)
+      ↓
+  Load Balancer (Round Robin)
+      ↓
+  ┌──────┬──────┬──────┐
+  │ App1 │ App2 │ App3 │
+  │:7000 │:7000 │:7000 │
+  └──────┴──────┴──────┘
+```
+
+- **Nginx** is the single entry point (reverse proxy)
+- **3 Flask containers** run the actual application
+- Nginx distributes requests evenly using Round Robin
+
+---
+
 ## Lab Steps
 
 ### Step 1: Start the Application
 
-**Command:**
 ```bash
-docker-compose up --build
+docker compose up --build --scale app=3
 ```
+
+> **Why `--scale app=3`?**
+> The `deploy: replicas` key in `docker-compose.yml` only works in Docker Swarm mode.
+> For regular Compose, `--scale` is how you spin up multiple instances of a service.
 
 **What happens:**
 - Builds the Flask application image
-- Starts 3 replicas of the Flask app (each with a unique hostname)
+- Starts 3 instances of the Flask app, each with a unique hostname
 - Starts Nginx as a reverse proxy/load balancer
 - Nginx listens on port 80 and forwards requests to the Flask containers
 
-**Expected Output:**
+**Expected output:**
 ```
-Creating nginx_app_1 ... done
-Creating nginx_app_2 ... done
-Creating nginx_app_3 ... done
-Creating nginx_nginx_1 ... done
-Attaching to nginx_app_1, nginx_app_2, nginx_app_3, nginx_nginx_1
+Container nginx-app-1  Started
+Container nginx-app-2  Started
+Container nginx-app-3  Started
+Container nginx-nginx-1  Started
 ```
+
+---
 
 ### Step 2: Test the Load Balancer
 
-1. **Open your web browser**
-2. **Navigate to:** `http://localhost`
-3. **Refresh the page 10 times**
+Open your browser and navigate to `http://localhost`. Refresh the page several times.
 
-**What you should see:**
+**What you should see rotate:**
+```
+Hello! I am Container ID: nginx-app-1
+Hello! I am Container ID: nginx-app-2
+Hello! I am Container ID: nginx-app-3
+Hello! I am Container ID: nginx-app-1   ← starts over
+```
 
-- **First refresh:** `Hello! I am Container ID: nginx_app_1`
-- **Second refresh:** `Hello! I am Container ID: nginx_app_2`
-- **Third refresh:** `Hello! I am Container ID: nginx_app_3`
-- **Fourth refresh:** `Hello! I am Container ID: nginx_app_1` (starts over)
-- And so on...
+**Or use the terminal:**
 
-**Or use curl:**
+On **Linux/Mac**:
 ```bash
-for i in {1..10}; do
-  echo "Request $i:"
-  curl http://localhost
-  echo -e "\n"
-  sleep 1
+for i in {1..9}; do
+  echo "Request $i: $(curl -s http://localhost)"
 done
 ```
 
-## Understanding the Results
-
-### Question: Why does the Container ID change?
-
-**Answer: Nginx Round Robin Load Balancing**
-
-Nginx uses a **Round Robin** algorithm by default. This means:
-
-1. **Request 1** → Goes to Container 1
-2. **Request 2** → Goes to Container 2
-3. **Request 3** → Goes to Container 3
-4. **Request 4** → Goes back to Container 1 (round robin cycle repeats)
-
-This distributes the load evenly across all available containers, ensuring:
-- **High Availability**: If one container fails, others can still serve requests
-- **Performance**: Work is distributed, preventing any single container from being overwhelmed
-- **Scalability**: Easy to add more containers to handle increased traffic
-
-## Architecture
-
-```
-Internet Request
-      ↓
-   Nginx (Port 80)
-      ↓
-   Load Balancer
-      ↓
-   ┌──────┬──────┬──────┐
-   │ App1 │ App2 │ App3 │
-   │:5000 │:5000 │:5000 │
-   └──────┴──────┴──────┘
+On **Windows (PowerShell)**:
+```powershell
+1..9 | ForEach-Object { "Request $_`: $(Invoke-WebRequest -Uri http://localhost -UseBasicParsing).Content" }
 ```
 
-- **Nginx** acts as the entry point (reverse proxy)
-- **3 Flask containers** run the actual application
-- Nginx distributes requests using Round Robin
+**Expected output:**
+```
+Request 1: Hello! I am Container ID: nginx-app-1
+Request 2: Hello! I am Container ID: nginx-app-2
+Request 3: Hello! I am Container ID: nginx-app-3
+Request 4: Hello! I am Container ID: nginx-app-1
+...
+```
 
-## How It Works
+---
 
-### nginx.conf Explained
+### Step 3: Understand Why This Works
 
+#### Why does the container name change?
+
+Nginx uses **Round Robin** by default — requests are distributed to each backend in turn:
+
+1. Request 1 → App 1
+2. Request 2 → App 2
+3. Request 3 → App 3
+4. Request 4 → App 1 ← cycle repeats
+
+This ensures:
+- **Even load distribution** — no single container is overwhelmed
+- **High availability** — if one container fails, Nginx routes around it
+- **Scalability** — add more containers with `--scale app=5` and Nginx picks them up automatically
+
+#### How does Nginx know about all 3 containers?
+
+In `nginx.conf`:
 ```nginx
 upstream my_app {
-    server app:5000;  # Points to the 'app' service on port 5000
-}
-
-server {
-    listen 80;
-    location / {
-        proxy_pass http://my_app;  # Forward requests to upstream
-    }
+    server app:7000;
 }
 ```
 
-- **`upstream my_app`**: Defines a group of backend servers
-- **`server app:5000`**: Docker Compose resolves `app` to all 3 replicas
-- **`proxy_pass http://my_app`**: Forwards requests to the upstream group
+`app` is the Docker Compose service name. Docker's built-in DNS resolves `app` to **all running containers** with that service name. Nginx gets the full list and round-robins across them.
 
-### docker-compose.yml Explained
+#### docker-compose.yml explained
 
 ```yaml
 services:
   app:
-    deploy:
-      replicas: 3  # Creates 3 identical containers
-      
+    build: .          # Build our Flask image
+
   nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"       # Nginx is the only service exposed to the host
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf  # Inject our config
     depends_on:
-      - app  # Waits for app containers to be ready
+      - app           # Start app containers before Nginx
 ```
 
-- **`replicas: 3`**: Creates 3 instances of the Flask app
-- **`depends_on`**: Ensures app containers start before Nginx
+Notice only **Nginx** has a port mapping. The Flask containers are internal — not directly reachable from outside the Docker network.
+
+---
+
+### Step 4: Simulate a Container Failure
+
+With the stack running, open a new terminal and stop one of the app containers:
+
+```bash
+docker stop nginx-app-2
+```
+
+Send a few requests:
+
+```bash
+# Linux/Mac
+for i in {1..6}; do curl -s http://localhost; echo; done
+
+# PowerShell
+1..6 | ForEach-Object { (Invoke-WebRequest -Uri http://localhost -UseBasicParsing).Content }
+```
+
+**What do you observe?** Nginx stops routing to `nginx-app-2` and distributes requests across the remaining two containers. This is the **high availability** benefit of a load balancer.
+
+Bring it back:
+```bash
+docker start nginx-app-2
+```
+
+---
 
 ## Cleanup
 
-When you're done:
-
-**Stop and remove containers:**
 ```bash
-docker-compose down
-```
+# Stop and remove containers and network
+docker compose down
 
-**Remove everything including volumes:**
-```bash
-docker-compose down -v
+# Also remove the built image
+docker compose down --rmi local
 ```
 
 ## Key Takeaways
