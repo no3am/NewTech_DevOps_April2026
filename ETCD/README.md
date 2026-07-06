@@ -64,10 +64,10 @@ etcd_watcher | Waiting for updates...
 
 ### Step 2: Change the Key Value
 
-In a **new terminal**, run the writer script to change the key:
+In a **new terminal**, run the writer script via the watcher container:
 
 ```bash
-python writer.py red
+docker compose exec watcher python writer.py red
 ```
 
 **What happens:**
@@ -99,9 +99,9 @@ Timestamp: 2024-03-15 10:30:45
 Try different values:
 
 ```bash
-python writer.py blue
-python writer.py green
-python writer.py "#FF5733"
+docker compose exec watcher python writer.py blue
+docker compose exec watcher python writer.py green
+docker compose exec watcher python writer.py "#FF5733"
 ```
 
 Each time you run the writer, the watcher **immediately** detects the change - no polling, no delay!
