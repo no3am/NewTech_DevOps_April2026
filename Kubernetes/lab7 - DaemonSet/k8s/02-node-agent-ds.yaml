@@ -1,0 +1,103 @@
+# DaemonSet: ensures exactly one Pod runs on every schedulable node.
+#
+# There is NO replicas field. Desired count = number of nodes that match the selector.
+# When a node joins the cluster, a Pod is automatically scheduled on it.
+# When a node leaves, its Pod is garbage-collected.
+#
+# Real-world uses: Fluentd/Filebeat (log collection), Node Exporter (metrics),
+# Datadog/Dynatrace agents, Falco (security), CNI plugins (Calico, Cilium).
+#
+# This lab uses a lightweight busybox agent so the concepts are transparent —
+# in production you would swap the image for Fluentd, Node Exporter, etc.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-agent
+  namespace: lab7-daemonset
+  labels:
+    app: node-agent
+spec:
+  selector:
+    matchLabels:
+      app: node-agent
+
+  updateStrategy:
+    type: RollingUpdate     # Default. Alternatives: OnDelete (covered in Part 4)
+    rollingUpdate:
+      maxUnavailable: 1     # At most 1 node loses its agent Pod during a rolling update
+
+  template:
+    metadata:
+      labels:
+        app: node-agent
+    spec:
+      # Tolerations: allow this Pod to be scheduled on nodes that have NoSchedule taints.
+      # Minikube's single node IS the control-plane and carries these taints by default.
+      # Without these tolerations, DESIRED would show 0 on a single-node Minikube cluster.
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master     # Older Kubernetes versions use "master"
+          operator: Exists
+          effect: NoSchedule
+
+      containers:
+        - name: node-agent
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "==============================="
+              echo " Node Agent Starting"
+              echo "==============================="
+              echo "Node:      ${NODE_NAME}"
+              echo "Pod:       ${POD_NAME}"
+              echo "Namespace: ${POD_NAMESPACE}"
+              echo ""
+              echo "Host log files visible to this agent:"
+              ls /host-logs/ | head -20
+              echo ""
+              while true; do
+                echo "[$(date -u +%H:%M:%SZ)] Agent alive on node: ${NODE_NAME}"
+                sleep 15
+              done
+
+          env:
+            # Downward API: inject node-level metadata without querying the Kubernetes API.
+            # NODE_NAME is the standard way for DaemonSet agents to tag their output
+            # (metrics, log streams) with the name of the node they run on.
+            # spec.nodeName is set by the scheduler when the Pod is assigned to a node.
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+          volumeMounts:
+            - name: host-logs
+              mountPath: /host-logs
+              readOnly: true    # Agents must never modify node logs
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+      terminationGracePeriodSeconds: 10
+
+      volumes:
+        - name: host-logs
+          hostPath:
+            path: /var/log      # Mounts the node's /var/log into the container
+            type: Directory

@@ -1,0 +1,80 @@
+# DaemonSet with nodeSelector: only runs on nodes that carry a specific label.
+#
+# DaemonSets do NOT have to run on every node. nodeSelector restricts scheduling
+# to nodes that have a matching label. This is essential for:
+#   - GPU driver agents (only on GPU-equipped nodes)
+#   - Security scanners opted in per-team
+#   - Log forwarders only on nodes handling sensitive workloads
+#
+# To make this DaemonSet schedule a Pod, label the target node:
+#   kubectl label node minikube monitor=true
+#
+# To remove all its Pods (without deleting the DaemonSet), remove the label:
+#   kubectl label node minikube monitor-
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-agent-monitored
+  namespace: lab7-daemonset
+  labels:
+    app: node-agent-monitored
+spec:
+  selector:
+    matchLabels:
+      app: node-agent-monitored
+
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+  template:
+    metadata:
+      labels:
+        app: node-agent-monitored
+    spec:
+      # nodeSelector: only schedule on nodes with label "monitor=true".
+      # Nodes without this label are skipped entirely — DESIRED count reflects only
+      # the nodes that DO carry the label.
+      nodeSelector:
+        monitor: "true"
+
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+
+      containers:
+        - name: node-agent
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "================================="
+              echo " Targeted Node Agent"
+              echo "================================="
+              echo "This agent only runs on nodes labelled: monitor=true"
+              echo "Node: ${NODE_NAME}"
+              echo ""
+              while true; do
+                echo "[$(date -u +%H:%M:%SZ)] Monitored agent on: ${NODE_NAME}"
+                sleep 15
+              done
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+      terminationGracePeriodSeconds: 10
