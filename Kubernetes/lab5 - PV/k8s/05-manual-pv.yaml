@@ -1,0 +1,42 @@
+# PersistentVolume (PV): the actual storage resource.
+#
+# This is the "admin" side of the static provisioning model.
+# An admin creates PVs that represent real storage capacity in the cluster.
+# Developers then create PVCs to claim that storage — they don't need to know
+# what type of storage it is or where it lives.
+#
+# PVs are CLUSTER-SCOPED (no namespace). They represent cluster-wide resources.
+#
+# This PV uses hostPath — a directory on the Minikube node's filesystem.
+# hostPath is ONLY suitable for single-node development clusters like Minikube.
+# In production, you would use a cloud CSI driver (aws-ebs, gce-pd, azure-disk)
+# or a network storage system (NFS, Ceph, Longhorn).
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-manual
+  labels:
+    type: local
+    app: postgres-manual
+spec:
+  # storageClassName acts as a label for matching.
+  # A PVC must request the same storageClassName to bind to this PV.
+  # "manual" is a convention name — there is no actual StorageClass object with this name.
+  storageClassName: manual
+
+  capacity:
+    storage: 1Gi              # How much storage this PV provides
+
+  accessModes:
+    - ReadWriteOnce           # RWO: one node can mount this read-write at a time
+                              # Correct for Postgres — only one writer allowed
+
+  # Reclaim policy: what happens to this PV when the PVC is deleted?
+  # Retain = keep the PV and its data, change status to "Released"
+  # An admin must manually intervene to re-use or delete the PV.
+  # This is the SAFE choice for databases.
+  persistentVolumeReclaimPolicy: Retain
+
+  hostPath:
+    path: /mnt/lab5/manual    # Directory on the Minikube node (auto-created if absent)
+    type: DirectoryOrCreate   # Create the directory if it doesn't exist

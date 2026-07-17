@@ -1,4 +1,16 @@
-# Kubernetes Lab 5: Persistent Volumes (PVCs)
+# Lab 5 has moved!
+
+The lab has been fully reworked and is now at:
+
+**[`../README.md`](../README.md)** — main lab guide  
+**[`../k8s/`](../k8s/)** — all YAML manifests (9 files)
+
+The files in this `PVC/` folder are kept for reference only. Please follow the new lab.
+
+---
+
+<!-- original content below, kept for reference -->
+# Kubernetes Lab 5: Persistent Volumes (PVCs) [ARCHIVED]
 
 ## Objective
 

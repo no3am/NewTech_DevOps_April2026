@@ -1,0 +1,27 @@
+# PersistentVolumeClaim (PVC): a request for storage.
+#
+# This is the "developer" side of the static provisioning model.
+# The developer says: "I need 1Gi of ReadWriteOnce storage with storageClass 'manual'."
+# Kubernetes finds a matching PV and binds them together.
+#
+# PVCs are NAMESPACE-SCOPED. A PVC in namespace A cannot be claimed by a Pod in namespace B.
+#
+# Binding rules — Kubernetes binds a PVC to a PV when ALL of these match:
+#   1. storageClassName matches (or both are empty)
+#   2. accessModes requested by PVC are a subset of what the PV supports
+#   3. Requested capacity <= PV capacity
+#   4. PV is in "Available" state (not already bound to another PVC)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc-manual
+  namespace: lab5-storage
+spec:
+  storageClassName: manual    # Must match the PV's storageClassName (05-manual-pv.yaml)
+
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 1Gi            # Kubernetes will bind to the first PV that can satisfy this

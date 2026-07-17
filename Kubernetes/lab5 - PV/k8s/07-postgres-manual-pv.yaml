@@ -1,0 +1,47 @@
+# Postgres using the manually-provisioned PVC.
+#
+# The key section to study is `volumeMounts` + `volumes`:
+#   - volumes[].persistentVolumeClaim.claimName  → which PVC to use
+#   - volumeMounts[].mountPath                   → where in the container to mount it
+#   - volumeMounts[].subPath                     → mount a SUBDIRECTORY of the volume
+#
+# Why subPath: pgdata?
+#   Postgres requires its data directory to be empty or already initialized by Postgres.
+#   The root of a hostPath volume may contain other filesystem entries.
+#   Using subPath: pgdata tells Kubernetes to mount only the "pgdata/" subdirectory
+#   of the volume at the mountPath. This gives Postgres a clean, isolated directory
+#   and avoids "initdb: directory exists and is not empty" errors.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-manual
+  namespace: lab5-storage
+  labels:
+    app: postgres-manual
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-manual
+  template:
+    metadata:
+      labels:
+        app: postgres-manual
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data   # Postgres's data directory
+              subPath: pgdata                       # Use the pgdata/ subdir inside the volume
+
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc-manual          # References 06-manual-pvc.yaml

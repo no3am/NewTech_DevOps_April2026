@@ -1,0 +1,43 @@
+# Postgres using the dynamically-provisioned PVC.
+#
+# From the Deployment's perspective, this is IDENTICAL to 07-postgres-manual-pv.yaml
+# (same volumeMount, same subPath). The only difference is which PVC it references.
+#
+# This demonstrates the power of the PVC abstraction:
+#   - The app doesn't care whether the PV was created manually or by a StorageClass
+#   - Switching storage backends only requires updating the StorageClass or PVC spec
+#   - No changes needed to the Deployment or application code
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-dynamic
+  namespace: lab5-storage
+  labels:
+    app: postgres-dynamic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-dynamic
+  template:
+    metadata:
+      labels:
+        app: postgres-dynamic
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc-dynamic         # References 08-dynamic-pvc.yaml

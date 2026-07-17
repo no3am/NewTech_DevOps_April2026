@@ -1,0 +1,30 @@
+# Dynamic PVC: requests storage without a pre-existing PV.
+#
+# No storageClassName is specified here. Kubernetes uses the cluster's DEFAULT
+# StorageClass to automatically provision a PV the moment this PVC is created.
+#
+# On Minikube, the default StorageClass is "standard" (k8s.io/minikube-hostpath).
+# On AWS EKS, it is typically "gp2" or "gp3" (AWS EBS).
+# On GCP GKE, it is "standard" (GCE Persistent Disk).
+# On Azure AKS, it is "default" (Azure Managed Disk).
+#
+# The developer does NOT need to know any of this — the StorageClass abstracts it away.
+# This is the standard pattern used in production cloud-native environments.
+#
+# IMPORTANT: Check the reclaim policy of the default StorageClass before relying on it
+# for data you care about:
+#   kubectl get storageclass
+# Minikube's default has reclaimPolicy: Delete — the PV will be deleted with the PVC!
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc-dynamic
+  namespace: lab5-storage
+spec:
+  # storageClassName is intentionally omitted — uses the cluster's default StorageClass
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 1Gi

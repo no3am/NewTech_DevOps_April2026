@@ -1,0 +1,33 @@
+# Postgres WITHOUT a persistent volume.
+#
+# The database writes all data to the container's overlay filesystem.
+# When this Pod is deleted, the Deployment schedules a new Pod with a
+# brand-new, empty overlay filesystem — all data is LOST.
+#
+# This is the problem we will fix in Parts 3 and 4.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-no-vol
+  namespace: lab5-storage
+  labels:
+    app: postgres-no-vol
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-no-vol
+  template:
+    metadata:
+      labels:
+        app: postgres-no-vol
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          envFrom:
+            - secretRef:
+                name: postgres-secret   # Credentials from 04-postgres-secret.yaml
+          ports:
+            - containerPort: 5432
+          # No volumeMounts. No volumes. Data lives only on the container filesystem.

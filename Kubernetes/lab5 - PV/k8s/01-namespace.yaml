@@ -1,0 +1,6 @@
+# Isolate all lab resources in a dedicated namespace.
+# Deleting this namespace at the end cleans up everything in one command.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lab5-storage
