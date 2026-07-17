@@ -1,16 +1,4 @@
-# Headless Service: Required for StatefulSets.
-# clusterIP: None means no cluster IP is allocated - DNS returns the Pod IPs directly.
-# This gives each StatefulSet Pod a stable DNS name: web-0.nginx, web-1.nginx, web-2.nginx
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx
-  labels:
-    app: nginx
-spec:
-  ports:
-    - port: 80
-      name: web
-  clusterIP: None   # This makes it a Headless Service
-  selector:
-    app: nginx
+# This file has been superseded. Use 02-headless-service.yaml instead.
+# It is kept here only so existing bookmarks are not broken.
+#
+# See the lab README for the full updated lab guide.

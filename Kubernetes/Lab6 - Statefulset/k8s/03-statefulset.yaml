@@ -1,0 +1,65 @@
+# StatefulSet: gives Pods ordered deployment, stable identity, and sticky storage.
+#
+# Key differences from a Deployment you should notice in this file:
+#   1. serviceName      — links to the Headless Service for per-Pod DNS
+#   2. podManagementPolicy — controls whether Pods start/stop in order or in parallel
+#   3. updateStrategy.partition — enables canary-style rolling updates
+#   4. volumeClaimTemplates — creates one dedicated PVC per Pod (not a shared volume)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+  namespace: lab6-statefulset
+spec:
+  # Must match the name of the Headless Service (02-headless-service.yaml).
+  # This is what enables the per-Pod DNS names: web-0.nginx, web-1.nginx, web-2.nginx
+  serviceName: "nginx"
+
+  selector:
+    matchLabels:
+      app: nginx
+
+  replicas: 3
+
+  # OrderedReady (default): create Pods 0→1→2, delete 2→1→0.
+  # Each Pod must be Running and Ready before the next one is created.
+  # Parallel: create/delete all at once — faster but loses the ordering guarantee.
+  podManagementPolicy: OrderedReady
+
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # partition: N means only Pods with ordinal >= N receive updates.
+      # Default 0 = update all Pods.
+      # Set to 2 to update only web-2 first (canary), then lower to roll out to all.
+      partition: 0
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27    # Pinned version — never use "latest" in real manifests
+          ports:
+            - containerPort: 80
+              name: web
+          volumeMounts:
+            - name: www
+              mountPath: /usr/share/nginx/html   # Nginx serves files from here
+
+  # volumeClaimTemplates: one PVC is created per Pod, named "<template-name>-<pod-name>":
+  #   www-web-0, www-web-1, www-web-2
+  #
+  # These PVCs are NOT deleted when a Pod is deleted or when the StatefulSet is scaled down.
+  # When a Pod is recreated, it is automatically re-bound to its own PVC.
+  # This is "sticky storage" — each Pod always gets its own data back.
+  volumeClaimTemplates:
+    - metadata:
+        name: www
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 256Mi

@@ -1,0 +1,29 @@
+# Headless Service: required for StatefulSets to give each Pod a stable DNS name.
+#
+# clusterIP: None makes it "headless" — no single cluster IP is assigned.
+# Instead, DNS returns the individual Pod IPs directly, and Kubernetes registers
+# a DNS A record for each Pod in the StatefulSet:
+#
+#   web-0.nginx.lab6-statefulset.svc.cluster.local  →  <web-0 Pod IP>
+#   web-1.nginx.lab6-statefulset.svc.cluster.local  →  <web-1 Pod IP>
+#   web-2.nginx.lab6-statefulset.svc.cluster.local  →  <web-2 Pod IP>
+#
+# These records are updated automatically if a Pod is rescheduled to a new node.
+# The name stays the same — only the IP changes. This is "stable network identity."
+#
+# Compare to a regular Service: it assigns a single stable IP and load-balances
+# across all matching Pods. You cannot address web-1 specifically through it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx                  # This name is referenced by StatefulSet's serviceName field
+  namespace: lab6-statefulset
+  labels:
+    app: nginx
+spec:
+  ports:
+    - port: 80
+      name: web
+  clusterIP: None              # This is what makes the Service "headless"
+  selector:
+    app: nginx
