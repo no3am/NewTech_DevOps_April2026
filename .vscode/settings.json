@@ -1,0 +1,9 @@
+{
+  // Tell the YAML language server that Helm template files are not plain YAML.
+  // Without this, it tries to parse {{ }} Go template syntax as YAML flow collections
+  // and raises false "Block collections are not allowed within flow collections" errors.
+  "files.associations": {
+    "**/templates/*.yaml": "helm",
+    "**/templates/*.tpl": "helm"
+  }
+}
