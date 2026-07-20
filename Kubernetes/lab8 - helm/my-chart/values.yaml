@@ -1,6 +1,33 @@
-# Default values for web-server.
-# values.yaml separates configuration from logic—change these without touching templates.
+# values.yaml — the single source of truth for configurable parameters.
+#
+# Every value used in templates/ comes from here (or from --set / -f overrides).
+# You should never need to edit a template file to change configuration.
+#
+# Override precedence (lowest → highest):
+#   values.yaml  <  -f override.yaml  <  --set key=value
 
-image: nginx:1.14.2
 replicaCount: 1
+
+# Splitting repository and tag is the standard Helm convention.
+# It lets CI/CD pipelines override just the tag without touching the repository:
+#   helm upgrade my-release ./my-chart --set image.tag=1.28
+image:
+  repository: nginx
+  tag: "1.27"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
 environment: dev
+
+# Resources block is passed directly to the container spec via toYaml.
+# Override per environment: --set resources.limits.memory=256Mi
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi

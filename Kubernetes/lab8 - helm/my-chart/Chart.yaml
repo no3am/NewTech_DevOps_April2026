@@ -1,6 +1,13 @@
 apiVersion: v2
 name: web-server
-description: A simple nginx web server chart for Helm fundamentals
+description: A simple Nginx web server chart for learning Helm fundamentals
 type: application
-version: 0.1.0
-appVersion: "1.14.2"
+
+# version: the Chart version. Increment this when you change the chart itself
+# (templates, values structure). Follows semver.
+version: 0.2.0
+
+# appVersion: the version of the application being packaged (Nginx here).
+# This is purely informational — it shows in `helm list` and can be used in
+# templates via .Chart.AppVersion.
+appVersion: "1.27.0"

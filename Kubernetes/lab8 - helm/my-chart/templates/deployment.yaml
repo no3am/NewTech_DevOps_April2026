@@ -1,23 +1,40 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-web
+  # include calls a named template defined in _helpers.tpl.
+  # The dot (.) passes the full template context (Values, Release, Chart, etc.)
+  name: {{ include "my-chart.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    app: web-server
-    env: {{ .Values.environment }}
+    # nindent 4 = add a leading newline then indent every line by 4 spaces.
+    # The dash in {{- trims whitespace before the action, preventing blank lines.
+    {{- include "my-chart.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: web-server
+      {{- include "my-chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: web-server
-        env: {{ .Values.environment }}
+        {{- include "my-chart.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: nginx
-          image: {{ .Values.image }}
+          # Concatenate repository and tag so each can be overridden independently:
+          #   --set image.tag=1.28          (update only the tag)
+          #   --set image.repository=myrepo/nginx  (use a private registry)
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 80
+            - name: http
+              containerPort: 80
+          env:
+            - name: APP_ENV
+              # quote wraps the value in double quotes, preventing YAML from
+              # misinterpreting values like "true", "1", or "null" as non-strings.
+              value: {{ .Values.environment | quote }}
+          resources:
+            # toYaml converts the Go map at .Values.resources to YAML text.
+            # nindent 12 adds the correct indentation for the container spec.
+            {{- toYaml .Values.resources | nindent 12 }}

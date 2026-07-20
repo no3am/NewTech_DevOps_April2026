@@ -1,0 +1,21 @@
+Thank you for installing {{ .Chart.Name }} {{ .Chart.AppVersion }}!
+
+  Release:     {{ .Release.Name }}
+  Namespace:   {{ .Release.Namespace }}
+  Environment: {{ .Values.environment }}
+  Replicas:    {{ .Values.replicaCount }}
+  Image:       {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+To access the web server, run:
+
+  kubectl port-forward svc/{{ include "my-chart.fullname" . }} 8080:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+
+Then open: http://localhost:8080
+
+To see what was deployed:
+
+  helm get manifest {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+To see all applied values:
+
+  helm get values {{ .Release.Name }} -n {{ .Release.Namespace }} --all
