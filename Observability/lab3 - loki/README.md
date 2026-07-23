@@ -60,7 +60,7 @@ You should see at least a Loki pod (e.g. `loki-0` or `loki-loki-...`) and a Prom
 
 ## Step 2: Deploy the App and Traffic
 
-Build the Payment Processor image (from the **lab2 - loki** folder, with Docker pointed at your cluster if using Minikube):
+Build the Payment Processor image (from the **lab3 - loki** folder, with Docker pointed at your cluster if using Minikube):
 
 ```bash
 eval $(minikube docker-env)

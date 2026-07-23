@@ -37,7 +37,7 @@ You now have **mimir-service** on port **8080** in the `monitoring` namespace. I
 
 Tell Prometheus to **remote write** every scrape to Mimir. You do this by **upgrading** the existing Helm release with a values file that sets `prometheus.prometheusSpec.remoteWrite`.
 
-From the **lab3 - mimir** folder (where `k8s/5-prometheus-values.yaml` lives):
+From the **lab4 - mimir** folder (where `k8s/5-prometheus-values.yaml` lives):
 
 ```bash
 helm upgrade monitoring prometheus-community/kube-prometheus-stack -f k8s/5-prometheus-values.yaml -n monitoring

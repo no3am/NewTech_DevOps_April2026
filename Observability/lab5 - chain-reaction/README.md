@@ -37,7 +37,7 @@ Wait until Pods are ready in `chain-reaction` (grafana, tempo, loki, otel-collec
 
 ### 1.2 Build and deploy the apps (no tracing yet)
 
-From the **lab4 - chain-reaction** folder:
+From the **lab5 - chain-reaction** folder:
 
 ```bash
 eval $(minikube docker-env)
