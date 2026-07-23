@@ -1,0 +1,21 @@
+# prod-values.yaml — production environment overrides.
+#
+# Applied with: helm upgrade my-release ./my-chart --namespace lab8 --values prod-values.yaml
+#
+# Only fields that differ from values.yaml defaults need to appear here.
+# Everything not listed falls back to the defaults in values.yaml.
+
+replicaCount: 2
+
+image:
+  tag: "1.25"
+
+environment: prod
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

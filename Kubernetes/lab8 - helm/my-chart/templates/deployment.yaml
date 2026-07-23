@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # include calls a named template defined in _helpers.tpl.
-  # The dot (.) passes the full template context (Values, Release, Chart, etc.)
+  {{- /* include calls a named template from _helpers.tpl.
+       The dot (.) passes the full template context (Values, Release, Chart, etc.) */}}
   name: {{ include "my-chart.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    # nindent 4 = add a leading newline then indent every line by 4 spaces.
-    # The dash in {{- trims whitespace before the action, preventing blank lines.
+    {{- /* nindent 4 = add a leading newline then indent every line by 4 spaces.
+         The leading dash in the action tag trims whitespace, preventing blank lines. */}}
     {{- include "my-chart.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
@@ -16,14 +16,27 @@ spec:
       {{- include "my-chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- /* "if" renders the block only when podAnnotations is truthy.
+           An empty map {} is falsy — no annotations key is emitted at all. */}}
+      {{- if .Values.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+      {{- end }}
       labels:
         {{- include "my-chart.selectorLabels" . | nindent 8 }}
     spec:
+      {{- /* "with" is like "if" but also re-scopes "." to the tested value.
+           Inside this block, "." is .Values.nodeSelector, so toYaml receives it directly.
+           An empty map {} is falsy — the nodeSelector key is not emitted. */}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: nginx
-          # Concatenate repository and tag so each can be overridden independently:
-          #   --set image.tag=1.28          (update only the tag)
-          #   --set image.repository=myrepo/nginx  (use a private registry)
+          {{- /* Splitting repository and tag lets CI/CD override just the tag:
+               --set image.tag=1.28  (update only the tag)
+               --set image.repository=myrepo/nginx  (use a private registry) */}}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -31,10 +44,31 @@ spec:
               containerPort: 80
           env:
             - name: APP_ENV
-              # quote wraps the value in double quotes, preventing YAML from
-              # misinterpreting values like "true", "1", or "null" as non-strings.
+              {{- /* quote wraps the value in double quotes, preventing YAML from
+                   misinterpreting values like "true", "1", or "null" as non-strings. */}}
               value: {{ .Values.environment | quote }}
+            {{- /* "range" iterates over the extraEnv list. Each iteration sets "." to
+                 the current item (a map with .name and .value keys).
+                 An empty list produces no output — the loop body never executes. */}}
+            {{- range .Values.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              {{- /* "http" is the named port defined above — decouples the probe
+                   from the actual port number so Service and probe stay in sync. */}}
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
           resources:
-            # toYaml converts the Go map at .Values.resources to YAML text.
-            # nindent 12 adds the correct indentation for the container spec.
+            {{- /* toYaml converts the Go map at .Values.resources to YAML text.
+                 nindent 12 adds the correct indentation for the container spec. */}}
             {{- toYaml .Values.resources | nindent 12 }}

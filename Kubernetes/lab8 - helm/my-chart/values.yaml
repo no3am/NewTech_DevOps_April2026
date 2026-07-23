@@ -31,3 +31,19 @@ resources:
   limits:
     cpu: 100m
     memory: 64Mi
+
+# Optional annotations added to each Pod (not the Deployment).
+# Useful for Prometheus scraping, Datadog APM, Linkerd injection, etc.
+# Empty map = no annotations block in the rendered output ({{ if }} skips it).
+# Example: --set podAnnotations.prometheus\.io/scrape=true
+podAnnotations: {}
+
+# Optional node scheduling constraint.
+# Empty map = no nodeSelector block rendered ({{ with }} skips it).
+# Example: --set nodeSelector.disktype=ssd
+nodeSelector: {}
+
+# Optional extra environment variables injected into the container.
+# Empty list = no extra env vars rendered ({{ range }} produces no output).
+# Example: --set 'extraEnv[0].name=LOG_LEVEL' --set 'extraEnv[0].value=debug'
+extraEnv: []

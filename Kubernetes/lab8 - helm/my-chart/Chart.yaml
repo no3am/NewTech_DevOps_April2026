@@ -5,7 +5,7 @@ type: application
 
 # version: the Chart version. Increment this when you change the chart itself
 # (templates, values structure). Follows semver.
-version: 0.2.0
+version: 0.3.0
 
 # appVersion: the version of the application being packaged (Nginx here).
 # This is purely informational — it shows in `helm list` and can be used in

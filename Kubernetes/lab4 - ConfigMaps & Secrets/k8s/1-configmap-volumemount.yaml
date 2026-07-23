@@ -1,0 +1,45 @@
+# ConfigMap - Volume Mount approach
+# Instead of injecting individual keys as env vars (configMapKeyRef),
+# the entire ConfigMap is mounted as a directory inside the container.
+# Each key becomes a FILE, and the value becomes that file's content.
+#
+# When to prefer volume mounts over env vars:
+#   - Config changes should be picked up WITHOUT restarting the pod
+#     (Kubernetes refreshes mounted ConfigMap files automatically ~1 min)
+#   - The config is a full file (nginx.conf, app.properties, JSON, YAML, etc.)
+#   - You have many keys and don't want to list each one in env:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spy-config-volume
+  labels:
+    app: top-secret-dashboard
+data:
+  # Each key here becomes a separate file when mounted.
+  # File name  = the key  (e.g. "mission.txt")
+  # File content = the value
+  mission.txt: "Operation Golden Eye"
+
+---
+# How to reference this ConfigMap in a Deployment using a volume mount
+# (compare this to the env-var approach in 3-deployment.yaml)
+#
+# spec:
+#   volumes:
+#     - name: config-volume          # give the volume a name
+#       configMap:
+#         name: spy-config-volume    # must match metadata.name above
+#
+#   containers:
+#     - name: dashboard
+#       image: top-secret-dashboard:latest
+#       volumeMounts:
+#         - name: config-volume      # matches the volume name above
+#           mountPath: /etc/config   # directory created inside the container
+#           readOnly: true
+#
+# Result inside the container at /etc/config:
+#   /etc/config/mission.txt       →  "Operation Golden Eye"
+#
+# The app then reads its config from files instead of env vars:
+#   e.g. open("/etc/config/mission.txt").read()
