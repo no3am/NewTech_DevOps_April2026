@@ -22,6 +22,25 @@ By the end of this lab you will be able to:
 - Minikube running, `kubectl` configured
 - Helm 3 installed — check with: `helm version`
 
+### Pre-pull images into Minikube
+
+The chart uses `nginx` and later parts use a Bitnami nginx image. Pull both into
+Minikube's Docker daemon now to avoid `ImagePullBackOff` from Docker Hub rate limits:
+
+```bash
+eval $(minikube docker-env)
+docker pull nginx:1.27
+docker pull nginx:1.26
+docker pull nginx:1.25
+```
+
+> **Skipped `eval`?** Load the images instead:
+> ```bash
+> for tag in 1.27 1.26 1.25; do
+>   docker pull nginx:$tag && minikube image load nginx:$tag
+> done
+> ```
+
 ---
 
 ## Core Concepts
