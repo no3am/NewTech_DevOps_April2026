@@ -1,0 +1,45 @@
+# kube-prometheus-stack values for the Loki lab.
+#
+# Install with:
+#   helm install monitoring prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring --create-namespace \
+#     -f helm-values/1-kube-prometheus-stack.yaml
+
+# Trim the stack down — for this lab we only need Prometheus + Grafana.
+# Disabling unused components cuts image pull time and memory significantly.
+alertmanager:
+  enabled: false
+
+kubeStateMetrics:
+  enabled: false
+
+nodeExporter:
+  enabled: false
+
+# ── Grafana ──────────────────────────────────────────────────────────────────
+grafana:
+  # Deterministic password so we can document it without using a random secret
+  adminPassword: "admin"
+
+  # Pre-provision Loki as a second data source alongside Prometheus.
+  # uid: loki must match the datasource uid referenced in any dashboards.
+  # This is the same provisioning pattern we used in lab 2 — no manual UI steps.
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki
+      access: proxy
+      url: http://loki.monitoring.svc.cluster.local:3100
+      isDefault: false
+      jsonData:
+        maxLines: 1000
+
+# ── Prometheus ───────────────────────────────────────────────────────────────
+prometheus:
+  prometheusSpec:
+    # Without this, Prometheus only picks up ServiceMonitors that carry
+    # the release label (release: monitoring). Setting it to an empty selector
+    # tells Prometheus to watch ALL ServiceMonitors in all namespaces.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}

@@ -1,0 +1,51 @@
+# Loki values for single-binary (development) deployment.
+#
+# Install with:
+#   helm install loki grafana/loki \
+#     --namespace monitoring \
+#     -f helm-values/2-loki.yaml
+
+# Single-binary mode: all Loki components (ingester, querier, distributor)
+# run in one pod. Perfect for a local cluster — don't use this in production.
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false   # disable multi-tenancy; every request is tenant "fake"
+
+  commonConfig:
+    replication_factor: 1
+
+  # Store logs on the local filesystem (the pod's PVC).
+  # In production you'd point this at object storage (S3, GCS, etc.).
+  storage:
+    type: filesystem
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+
+  limits_config:
+    # Allow replaying old log lines (useful when rebuilding from scratch)
+    reject_old_samples: false
+    reject_old_samples_max_age: 168h
+
+singleBinary:
+  replicas: 1
+
+# Disable distributed read/write/backend components — not used in single-binary mode
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+
+# Use the built-in service directly; no gateway needed for a dev setup
+gateway:
+  enabled: false
