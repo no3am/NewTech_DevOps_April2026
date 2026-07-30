@@ -94,7 +94,9 @@ Selects all log lines from that stream. Can use `=`, `!=`, `=~` (regex), `!~`.
 {namespace="monitoring", app="payment-processor"} | json | level="error"
 ```
 
-`| json` parses each log line as JSON and promotes every key to a label. Then `level="error"` filters to lines where the parsed `level` field equals `"error"`. This is how you do structured log filtering in Loki.
+`| json` parses each log line as JSON and promotes every key to a label. Then `level="error"` filters to lines where the parsed `level` field equals `"error"`. This is how you do structured log filtering in Loki — when logs reach Loki already unwrapped.
+
+> **Note:** When Kubernetes/containerd captures container stdout it wraps the log in an outer JSON envelope: `{"log":"<app json>","stream":"stdout","time":"..."}`. In that case `| json` sees `log`, `stream`, `time` — not the app fields. Use a **line filter** (`|= "ERR-999"`) to match raw bytes regardless of nesting, or configure Promtail's `cri` pipeline stage to unwrap the envelope before shipping.
 
 **Metric query (log volume over time)**
 
@@ -375,33 +377,24 @@ This tells you roughly 10% of all requests are failing. Unusual for a checkout e
 ### Right panel — Loki: find the cause
 
 - Data source: **Loki**
-- Query (structured — uses JSON parsing):
+- Query:
   ```logql
-  {namespace="monitoring", app="payment-processor"} | json | level="error"
+  {namespace="monitoring", app="payment-processor"} |= "ERR-999"
   ```
 - Click **Run query**.
 
-You should see error log lines appearing in sync with the Prometheus spikes. Expand a line — you will find:
+You should see error log lines appearing in sync with the Prometheus spikes. Expand a line — inside the `log` field you will find:
 
-```json
-{
-  "level": "error",
-  "msg": "Payment Gateway Timeout",
-  "item": "cursed_amulet",
-  "error_code": "ERR-999",
-  "endpoint": "/checkout"
-}
+```
+{"level":"error","msg":"Payment Gateway Timeout","item":"cursed_amulet","error_code":"ERR-999","endpoint":"/checkout"}
 ```
 
 The poison pill is `item=cursed_amulet`. Every time the traffic generator sends `cursed_amulet`, the app returns 500 and logs an error with `ERR-999`.
 
-**Alternative query if the JSON filter isn't matching:**
-
-```logql
-{namespace="monitoring"} |= "ERR-999"
-```
-
-The `|=` line filter doesn't require JSON parsing — it matches the raw log string. Only the payment-processor logs `ERR-999`.
+> **Why `|= "ERR-999"` and not `| json | level="error"`?**  
+> Kubernetes (containerd) wraps every container log line in an outer JSON envelope before writing it to disk:  
+> `{"log":"{\"level\":\"error\",...}\n","stream":"stdout","time":"..."}`  
+> If you apply `| json`, LogQL parses that outer wrapper and extracts `log`, `stream`, and `time` — it never reaches the nested `level` field. The `|=` **line filter** scans the raw bytes so it matches regardless of nesting. It's also more specific: only the payment-processor ever emits `ERR-999`.
 
 ### What you just did
 
@@ -418,28 +411,26 @@ Practice the LogQL concepts from the Core Concepts section.
 **Challenge 1 — Count error log lines per minute:**
 
 ```logql
-sum(rate({namespace="monitoring", app="payment-processor"} | json | level="error" [1m]))
+sum(rate({namespace="monitoring", app="payment-processor"} |= "ERR-999" [1m]))
 ```
 
-Switch from "Logs" to "Metrics" view in Explore to see it as a time-series graph.
+Switch from "Logs" to "Metrics" view in Explore to see it as a time-series graph. Compare the shape to the Prometheus error rate panel — they should track each other.
 
 **Challenge 2 — See all successful checkouts:**
 
 ```logql
-{namespace="monitoring", app="payment-processor"} | json | level="info"
+{namespace="monitoring", app="payment-processor"} |= "Payment successful"
 ```
 
 What items are being purchased successfully?
 
-**Challenge 3 — Count unique items that produced an error:**
+**Challenge 3 — Exclude errors and only see successful checkouts:**
 
 ```logql
-sum by (item) (
-  rate({namespace="monitoring", app="payment-processor"} | json | level="error" [1m])
-)
+{namespace="monitoring", app="payment-processor"} != "ERR-999"
 ```
 
-Only `cursed_amulet` should appear — the only item that triggers 500s.
+`!=` is the inverse line filter — it keeps all lines that do NOT contain the string.
 
 **Challenge 4 — Traffic generator access logs:**
 
