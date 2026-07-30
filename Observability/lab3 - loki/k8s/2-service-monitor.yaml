@@ -12,6 +12,10 @@ metadata:
     # Required: Prometheus (release=monitoring) only scrapes ServiceMonitors with this label
     release: monitoring
 spec:
+  # jobLabel tells the Operator which Service label to use as the `job` label in Prometheus.
+  # Without this, Prometheus defaults to the Service *name* (payment-processor-service).
+  # With jobLabel: app, it reads the Service's `app` label → job="payment-processor".
+  jobLabel: app
   selector:
     matchLabels:
       app: payment-processor

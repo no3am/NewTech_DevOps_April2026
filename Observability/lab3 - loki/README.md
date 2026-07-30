@@ -314,6 +314,9 @@ http_requests_total{job="payment-processor"}
 
 If you see results, Prometheus is scraping the app. Kill the port-forward (`Ctrl-C`) when done.
 
+> **Why `job="payment-processor"` and not `job="payment-processor-service"`?**  
+> By default the Prometheus Operator sets the `job` label to the **Service name** — which is `payment-processor-service`. The `jobLabel: app` field in `k8s/2-service-monitor.yaml` overrides this: it tells the Operator to read the Service's `app` label value (`payment-processor`) and use that as the job name instead. Without `jobLabel`, your PromQL would need `job="payment-processor-service"`.
+
 ---
 
 ## Part 2: Verify Logs Are Flowing into Loki
@@ -460,7 +463,13 @@ Run this to inspect the ServiceMonitor you applied:
 kubectl describe servicemonitor payment-processor -n monitoring
 ```
 
-Notice the `selector` field — it matches the Service label `app: payment-processor`. The Prometheus Operator watches for ServiceMonitor resources and automatically updates Prometheus's scrape configuration. You never edit `prometheus.yaml` directly. This is how scrape targets are managed at scale.
+Notice three key fields:
+
+- **`selector`** — matches the Service by label (`app: payment-processor`). This is how the Operator knows which Service to scrape.
+- **`endpoints[].port: http`** — references the port by **name** (not number). The Service defines `name: http` on port 80 → targetPort 5000. Using names makes manifests resilient to port number changes.
+- **`jobLabel: app`** — tells the Operator which label on the matched Service to use as the `job` label in Prometheus. Without this, `job` defaults to the Service name (`payment-processor-service`). With `jobLabel: app`, it reads `app: payment-processor` from the Service → `job="payment-processor"`.
+
+The Prometheus Operator watches for ServiceMonitor resources and automatically updates Prometheus's scrape configuration. You never edit `prometheus.yaml` directly. This is how scrape targets are managed at scale.
 
 Compare this to lab 1 where you hand-edited the `prometheus-config` ConfigMap and restarted Prometheus. ServiceMonitor is the production alternative.
 
