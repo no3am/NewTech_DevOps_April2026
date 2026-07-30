@@ -16,6 +16,21 @@ kubeStateMetrics:
 nodeExporter:
   enabled: false
 
+# Disable scrapers for control-plane components that are unreachable on Minikube.
+# On Minikube these components bind to localhost inside the node, so Prometheus
+# can't reach them and they show as DOWN — confusing noise during a demo.
+kubeControllerManager:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
 # ── Grafana ──────────────────────────────────────────────────────────────────
 grafana:
   # Deterministic password so we can document it without using a random secret
