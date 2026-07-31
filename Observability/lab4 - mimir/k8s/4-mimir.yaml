@@ -65,7 +65,8 @@ spec:
     spec:
       containers:
         - name: mimir
-          image: grafana/mimir:latest
+          image: grafana/mimir:2.12.0
+          imagePullPolicy: IfNotPresent
           args:
             - -target=all
             - -config.file=/etc/mimir/mimir.yaml

@@ -1,8 +1,41 @@
 # ---
-# Snippet for: helm upgrade monitoring prometheus-community/kube-prometheus-stack -f k8s/5-prometheus-values.yaml -n monitoring
-# Configures Prometheus to remote-write all scraped metrics to Mimir (long-term storage).
+# Helm upgrade values for kube-prometheus-stack.
+# Apply with --reuse-values so the original install values (disabled components,
+# adminPassword, Loki datasource, serviceMonitorSelector, etc.) are preserved.
+#
+# helm upgrade monitoring prometheus-community/kube-prometheus-stack \
+#   --namespace monitoring \
+#   --reuse-values \
+#   -f k8s/5-prometheus-values.yaml
 # ---
+
+# ── Prometheus: enable remoteWrite to Mimir ───────────────────────────────
 prometheus:
   prometheusSpec:
     remoteWrite:
-      - url: http://mimir-service:8080/api/v1/push
+      - url: http://mimir-service.monitoring.svc.cluster.local:8080/api/v1/push
+
+# ── Grafana: provision Mimir data source (alongside the existing Loki one) ─
+# Note: additionalDataSources is a *list* — Helm replaces the entire list on
+# upgrade. We must re-declare Loki here so it isn't silently removed.
+grafana:
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki
+      access: proxy
+      url: http://loki.monitoring.svc.cluster.local:3100
+      isDefault: false
+      jsonData:
+        maxLines: 1000
+
+    - name: Mimir
+      type: prometheus
+      uid: mimir
+      access: proxy
+      # Mimir exposes a Prometheus-compatible query API at /prometheus.
+      # The same PromQL syntax works against both Prometheus and Mimir.
+      url: http://mimir-service.monitoring.svc.cluster.local:8080/prometheus
+      isDefault: false
+      jsonData:
+        timeInterval: 15s
