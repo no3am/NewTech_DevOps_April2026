@@ -178,6 +178,19 @@ grafana.additionalDataSources:
 
 > **Why re-declare Loki?** Helm's `additionalDataSources` is a list. If you only specify Mimir in the upgrade values, Helm replaces the entire list and Loki disappears. Re-declaring both is the correct pattern.
 
+After the upgrade, Grafana's sidecar needs to reload the new datasource ConfigMap. If Mimir doesn't appear in **Connections → Data sources** within 30 seconds, restart the Grafana pod:
+
+```bash
+kubectl rollout restart deployment/monitoring-grafana -n monitoring
+kubectl rollout status deployment/monitoring-grafana -n monitoring
+```
+
+Then re-run the port-forward (the old one dies when the pod restarts):
+
+```bash
+kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
+```
+
 ### Verify Prometheus is sending data
 
 Wait about 30 seconds after the upgrade, then check the Prometheus remote write stats:
