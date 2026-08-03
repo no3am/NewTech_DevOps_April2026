@@ -132,7 +132,13 @@ kubectl run -n monitoring curl-test --rm -it --restart=Never --image=curlimages/
   -- curl -s http://mimir-service.monitoring.svc.cluster.local:8080/ready
 ```
 
-Should return `ready`. If it doesn't, check the pod logs:
+Should return `ready`. On first startup you may briefly see:
+
+```
+Ingester not ready: waiting for 15s after being ready
+```
+
+That's normal — Mimir's ingester has a built-in 15-second warm-up after all components initialize. Wait a few seconds and curl again. If it doesn't return `ready` after 30 seconds, check the pod logs:
 
 ```bash
 kubectl logs -n monitoring -l app=mimir --tail=30
