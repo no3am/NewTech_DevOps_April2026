@@ -243,23 +243,30 @@ Go to **Connections → Data sources**. You should now see three datasources: **
 
 Both panels should show the same shape and values. The data is identical — Prometheus scraped it, wrote it locally AND pushed it to Mimir simultaneously. You're now reading from two independent stores with the same PromQL.
 
-### Key difference to highlight
+### The retention gap — why remoteWrite from day one matters
 
-Change the time range to **Last 30 days**. Prometheus will show no data beyond its retention window (default 15 days). Mimir will retain whatever you push to it — you can configure its retention separately from Prometheus. This is the core value proposition.
+In Explore (split view), set the time range to **before you ran the `helm upgrade`** (the time when remoteWrite was not yet configured).
+
+- **Prometheus (left):** Shows data — it has been scraping and storing locally since the app was deployed.
+- **Mimir (right):** Shows nothing — it only has data from the moment remoteWrite was turned on.
+
+Now set the range to **after the upgrade**. Both panels show matching data.
+
+This is the key lesson: Prometheus does **not** backfill historical data to Mimir when you add remoteWrite. It only pushes new samples going forward. In production, remoteWrite should be configured from day one — not added retroactively when you realise you need long-term history.
 
 ---
 
 ## Part 3: PromQL Challenges
 
-Run these queries in the **Mimir** datasource in Explore to practice working with it.
-
 **Challenge 1 — Error rate from Mimir:**
+
+Run this in the **Mimir** datasource:
 
 ```promql
 sum(rate(http_requests_total{status="500"}[1m]))
 ```
 
-Same result as from Prometheus? It should be — data is mirrored via remoteWrite.
+Same result as from Prometheus (for the overlapping time window)? It should be — data is mirrored via remoteWrite.
 
 **Challenge 2 — Total request volume per status code:**
 
@@ -267,9 +274,11 @@ Same result as from Prometheus? It should be — data is mirrored via remoteWrit
 sum by (status) (increase(http_requests_total[5m]))
 ```
 
+Run this in both Prometheus and Mimir. Do the numbers match?
+
 **Challenge 3 — Check remoteWrite lag**
 
-Back in the Prometheus datasource, query:
+Back in the **Prometheus** datasource, query:
 
 ```promql
 prometheus_remote_storage_highest_timestamp_in_seconds
@@ -277,7 +286,20 @@ prometheus_remote_storage_highest_timestamp_in_seconds
 prometheus_remote_storage_queue_highest_sent_timestamp_seconds
 ```
 
-This gives the lag in seconds between what Prometheus has scraped and what it has successfully sent to Mimir. A healthy value is < 30 seconds. If it's growing, Mimir can't keep up.
+This is the lag in seconds between what Prometheus has scraped and what it has successfully delivered to Mimir. A healthy value is **< 30 seconds**. If it's growing over time, Mimir's ingester can't keep up with the write rate — something an on-call engineer would page on.
+
+**Challenge 4 — Build a Mimir-backed dashboard**
+
+1. Left menu → **Dashboards** → **New dashboard** → **Add visualization**.
+2. Set the datasource to **Mimir**.
+3. Add this query:
+   ```promql
+   sum(rate(http_requests_total[1m]))
+   ```
+4. Set panel title to `Total request rate (from Mimir)`.
+5. Save the dashboard as `Mimir — Payment Processor`.
+
+This is the production pattern: dashboards for long-term capacity analysis are explicitly wired to the long-term store (Mimir), while real-time alert dashboards use the local Prometheus. They can coexist in the same Grafana instance.
 
 ---
 
@@ -305,14 +327,15 @@ Because we're running in monolithic mode (`-target=all`) with a single replica, 
 |---|---|
 | **0** | Deployed Mimir (monolithic, `grafana/mimir:2.12.0`) with ConfigMap, Deployment, and Service. Verified `/ready` endpoint. |
 | **1** | Upgraded kube-prometheus-stack with `--reuse-values` to add `remoteWrite` to Mimir and provision the Mimir datasource in Grafana. |
-| **2** | Queried Mimir from Grafana Explore, compared results with Prometheus side by side — same data, two stores. |
-| **3** | Practiced PromQL against Mimir and checked remoteWrite health metrics. |
+| **2** | Compared Prometheus vs Mimir in Explore split view. Observed the retention gap — Mimir only holds data from when remoteWrite was enabled. |
+| **3** | Checked remoteWrite lag via `prometheus_remote_storage` metrics. Built a Mimir-backed dashboard for long-term capacity analysis. |
 
 **Key concepts to take away:**
-- Prometheus's local TSDB is ephemeral and short-lived by default. RemoteWrite sends data to durable external storage in real time.
+- Prometheus's local TSDB is ephemeral and short-lived. RemoteWrite sends data to durable external storage in real time — configure it from day one.
 - Mimir exposes the same Prometheus HTTP API — no new query language to learn.
 - `helm upgrade --reuse-values -f file.yaml` is the safe pattern for adding config to an existing release without wiping previous settings.
 - List values (like `additionalDataSources`) are replaced on upgrade — always re-declare the full list.
+- In production, wire long-term dashboards to Mimir and real-time alert dashboards to Prometheus — both live in the same Grafana.
 
 ---
 
