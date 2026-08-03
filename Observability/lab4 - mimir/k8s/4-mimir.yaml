@@ -30,9 +30,9 @@ data:
     blocks_storage:
       backend: filesystem
       filesystem:
-        dir: /data/mimir/tsdb
+        dir: /data/mimir/blocks   # compacted TSDB blocks ("object store" on disk)
       tsdb:
-        dir: /data/mimir/tsdb
+        dir: /data/mimir/tsdb     # ingester WAL + head blocks
       bucket_store:
         sync_dir: /data/mimir/tsdb-sync
 
