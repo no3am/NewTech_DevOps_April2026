@@ -26,8 +26,6 @@ data:
         kvstore:
           store: inmemory
         replication_factor: 1
-      min_ready_duration: 0s
-      final_sleep: 0s
 
     blocks_storage:
       backend: filesystem
