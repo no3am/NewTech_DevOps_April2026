@@ -1,6 +1,50 @@
 # ---
-# Grafana: UI for Tempo and Loki (self-contained lab; no kube-prometheus-stack required).
+# Grafana: UI for Tempo and Loki with pre-provisioned datasources.
+# Datasources include derived fields so trace → log and log → trace
+# navigation works automatically — no manual UI configuration needed.
 # ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: chain-reaction
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Tempo
+        type: tempo
+        uid: tempo
+        access: proxy
+        url: http://tempo:3200
+        jsonData:
+          # "Traces to logs": when viewing a trace in Tempo, Grafana can jump
+          # directly to matching Loki log lines for that trace ID.
+          tracesToLogsV2:
+            datasourceUid: loki
+            spanStartTimeShift: "-5m"
+            spanEndTimeShift: "5m"
+            filterByTraceID: true
+            filterBySpanID: false
+          # Enable Loki log search from within the Tempo trace view
+          lokiSearch:
+            datasourceUid: loki
+
+      - name: Loki
+        type: loki
+        uid: loki
+        access: proxy
+        url: http://loki:3100
+        jsonData:
+          # "Derived fields": when a Loki log line contains trace_id, Grafana
+          # renders a clickable "TraceID" link that opens that trace in Tempo.
+          # The regex matches the trace_id field in our JSON log format.
+          derivedFields:
+            - datasourceUid: tempo
+              matcherRegex: '"trace_id":"([a-f0-9]{32})"'
+              name: TraceID
+              url: "${__value.raw}"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,7 +64,8 @@ spec:
     spec:
       containers:
         - name: grafana
-          image: grafana/grafana:latest
+          image: grafana/grafana:11.1.0
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
@@ -30,10 +75,18 @@ spec:
               value: admin
             - name: GF_USERS_ALLOW_SIGN_UP
               value: "false"
+          volumeMounts:
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+              readOnly: true
           resources:
             requests:
               memory: "128Mi"
               cpu: "100m"
+      volumes:
+        - name: datasources
+          configMap:
+            name: grafana-datasources
 ---
 apiVersion: v1
 kind: Service
