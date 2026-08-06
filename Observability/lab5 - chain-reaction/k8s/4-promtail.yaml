@@ -61,12 +61,12 @@ data:
             target_label: app
           # Kubernetes stores logs at:
           # /var/log/pods/<namespace>_<pod-name>_<pod-uid>/<container>/<n>.log
-          # The glob *$1* matches the full directory name by pod UID.
+          # Joining uid + container with "/" as $1, the glob *$1/*.log matches
+          # the full directory. This is the same approach the Promtail Helm chart uses.
           - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
             separator: /
             target_label: __path__
-            regex: (.+)/(.+)
-            replacement: /var/log/pods/*$1*/$2/*.log
+            replacement: /var/log/pods/*$1/*.log
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -94,6 +94,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/promtail/promtail.yaml
+            - -log-level=debug
           volumeMounts:
             - name: config
               mountPath: /etc/promtail
