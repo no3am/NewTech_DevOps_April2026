@@ -10,7 +10,7 @@
 | | |
 |---|---|
 | **Team size** | 2 students (pairs assigned by instructor) |
-| **Duration** | 3 weeks |
+| **Due date** | **September 1, 2026** |
 | **AWS budget** | Each team is allocated a shared AWS account. Keep total spend under **$50**. Use `t3.medium` nodes (2 per cluster is sufficient for testing). **Destroy all resources when not actively testing** — idle EKS clusters cost ~$0.10/hr each. |
 
 ---
