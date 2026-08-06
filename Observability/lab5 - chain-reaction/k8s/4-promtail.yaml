@@ -59,11 +59,14 @@ data:
             target_label: container
           - source_labels: [__meta_kubernetes_pod_label_app]
             target_label: app
+          # Kubernetes stores logs at:
+          # /var/log/pods/<namespace>_<pod-name>_<pod-uid>/<container>/<n>.log
+          # The glob *$1* matches the full directory name by pod UID.
           - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
             separator: /
             target_label: __path__
             regex: (.+)/(.+)
-            replacement: /var/log/pods/$1/$2/*.log
+            replacement: /var/log/pods/*$1*/$2/*.log
 ---
 apiVersion: apps/v1
 kind: DaemonSet
