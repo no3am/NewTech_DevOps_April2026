@@ -56,7 +56,15 @@ data:
               namespace: chain-reaction
               __path__: /var/log/pods/chain-reaction_*/*/*.log
         pipeline_stages:
-          - cri: {}
+          # Minikube (Docker driver) writes containerd logs in Docker JSON format:
+          # {"log":"<application line>\n","stream":"stdout","time":"..."}
+          # Extract just the inner `log` field so Loki stores the raw app JSON line
+          # and `| json | trace_id="..."` works without double-parsing.
+          - json:
+              expressions:
+                line: log
+          - output:
+              source: line
           # Extract the app name from the directory structure so each service
           # gets its own Loki stream label, e.g. app="service-a".
           - regex:

@@ -24,13 +24,18 @@ data:
           # than the default `service_name` label Grafana would auto-generate.
           tracesToLogsV2:
             datasourceUid: loki
-            spanStartTimeShift: "-5m"
-            spanEndTimeShift: "5m"
-            filterByTraceID: true
+            spanStartTimeShift: "-2m"
+            spanEndTimeShift: "2m"
+            filterByTraceID: false
             filterBySpanID: false
-            customQuery: true
-            query: '{namespace="chain-reaction"} | json | trace_id="${__span.traceId}"'
-          # Enable Loki log search from within the Tempo trace view
+            # Use tag-based matching: maps the OTel `service.name` resource attribute
+            # to the Loki `app` label. Grafana generates {app="service-a"} for each span.
+            # No template variable substitution needed — avoids the YAML provisioning
+            # issue where ${...} variables are silently expanded to empty at load time.
+            customQuery: false
+            tags:
+              - key: service.name
+                value: app
           lokiSearch:
             datasourceUid: loki
 
