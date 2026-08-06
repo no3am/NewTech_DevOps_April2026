@@ -284,7 +284,11 @@ This is where the `trace_id` in every log line pays off.
 
 In the Tempo waterfall view, look for the **Logs** button in the top-right of the trace panel (or on individual spans). Click it — Grafana automatically queries Loki for all log lines with that TraceID and displays them inline.
 
-This works because `k8s/5-grafana.yaml` configures `tracesToLogsV2` in the Tempo datasource, telling Grafana to query the Loki datasource and filter by `trace_id`.
+This works because `k8s/5-grafana.yaml` configures `tracesToLogsV2` in the Tempo datasource with a custom query:
+```logql
+{namespace="chain-reaction"} | json | trace_id="${__trace.traceId}"
+```
+The custom query is necessary because Grafana's default behaviour maps the OTel `service.name` attribute to a `service_name` Loki label — but our Promtail labels pods with `app`, not `service_name`. The custom query bypasses the auto-generation and targets the stream directly by namespace.
 
 ### Via manual LogQL (manual)
 
