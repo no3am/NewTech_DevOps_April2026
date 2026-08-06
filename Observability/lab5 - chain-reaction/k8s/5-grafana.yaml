@@ -29,7 +29,7 @@ data:
             filterByTraceID: true
             filterBySpanID: false
             customQuery: true
-            query: '{namespace="chain-reaction"} | json | trace_id="${__trace.traceId}"'
+            query: '{namespace="chain-reaction"} | json | trace_id="${__span.traceId}"'
           # Enable Loki log search from within the Tempo trace view
           lokiSearch:
             datasourceUid: loki
