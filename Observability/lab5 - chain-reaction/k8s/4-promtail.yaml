@@ -94,7 +94,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/promtail/promtail.yaml
-            - -log-level=debug
+            - -log.level=debug
           volumeMounts:
             - name: config
               mountPath: /etc/promtail
