@@ -18,14 +18,18 @@ data:
         access: proxy
         url: http://tempo:3200
         jsonData:
-          # "Traces to logs": when viewing a trace in Tempo, Grafana can jump
-          # directly to matching Loki log lines for that trace ID.
+          # "Traces to logs": when viewing a trace in Tempo, Grafana jumps
+          # to matching Loki log lines. We use a custom query so the stream
+          # selector uses the `app` label (set by our Promtail config) rather
+          # than the default `service_name` label Grafana would auto-generate.
           tracesToLogsV2:
             datasourceUid: loki
             spanStartTimeShift: "-5m"
             spanEndTimeShift: "5m"
             filterByTraceID: true
             filterBySpanID: false
+            customQuery: true
+            query: '{namespace="chain-reaction"} | json | trace_id="${__trace.traceId}"'
           # Enable Loki log search from within the Tempo trace view
           lokiSearch:
             datasourceUid: loki
