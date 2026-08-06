@@ -45,28 +45,25 @@ data:
     clients:
       - url: http://loki:3100/loki/api/v1/push
     scrape_configs:
-      - job_name: kubernetes-pods
+      - job_name: chain-reaction
+        # Static glob — watches every container log under the chain-reaction namespace.
+        # Avoids kubernetes_sd_configs which has unreliable __path__ behaviour in Promtail 3.x.
+        # Path format: /var/log/pods/<namespace>_<pod>_<uid>/<container>/<n>.log
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              namespace: chain-reaction
+              __path__: /var/log/pods/chain-reaction_*/*/*.log
         pipeline_stages:
           - cri: {}
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_namespace]
-            target_label: namespace
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: pod
-          - source_labels: [__meta_kubernetes_pod_container_name]
-            target_label: container
-          - source_labels: [__meta_kubernetes_pod_label_app]
-            target_label: app
-          # Kubernetes stores logs at:
-          # /var/log/pods/<namespace>_<pod-name>_<pod-uid>/<container>/<n>.log
-          # Joining uid + container with "/" as $1, the glob *$1/*.log matches
-          # the full directory. This is the same approach the Promtail Helm chart uses.
-          - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
-            separator: /
-            target_label: __path__
-            replacement: /var/log/pods/*$1/*.log
+          # Extract the app name from the directory structure so each service
+          # gets its own Loki stream label, e.g. app="service-a".
+          - regex:
+              source: filename
+              expression: '/var/log/pods/chain-reaction_(?P<app>[a-z-]+)-[^_]+_[^/]+/[^/]+/\d+\.log'
+          - labels:
+              app:
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -94,7 +91,6 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - -config.file=/etc/promtail/promtail.yaml
-            - -log.level=debug
           volumeMounts:
             - name: config
               mountPath: /etc/promtail
